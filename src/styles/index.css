@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    margin: 0;
+  }
+  ::selection {
+    background: rgba(255, 46, 46, 0.28);
+  }
+  /* faint dot-grid backdrop, editorial-dark */
+  .dotgrid {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 26px 26px;
+    background-position: -1px -1px;
+  }
+}
+
+@layer components {
+  /* mono uppercase micro-label */
+  .label {
+    @apply font-mono uppercase tracking-label text-faint;
+    font-size: 10px;
+  }
+  .label-sm {
+    @apply font-mono uppercase tracking-label text-faint;
+    font-size: 9px;
+  }
+  .hairline {
+    @apply border border-line;
+  }
+  /* corner-bracket frame */
+  .brackets::before,
+  .brackets::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: theme('colors.line2');
+    pointer-events: none;
+  }
+  .brackets::before {
+    top: 0;
+    left: 0;
+    border-top: 1px solid;
+    border-left: 1px solid;
+  }
+  .brackets::after {
+    bottom: 0;
+    right: 0;
+    border-bottom: 1px solid;
+    border-right: 1px solid;
+  }
+  /* minimalist underline input */
+  .field {
+    @apply w-full bg-transparent border-0 border-b border-line py-2.5 text-ink
+      placeholder:text-faint focus:outline-none focus:border-ink transition-colors;
+  }
+  .btn-solid {
+    @apply inline-flex items-center justify-center gap-2 bg-ink text-bg font-mono uppercase
+      tracking-label text-[11px] px-6 py-3 hover:bg-white transition-colors disabled:opacity-40
+      disabled:cursor-not-allowed;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 border border-line text-ink font-mono
+      uppercase tracking-label text-[11px] px-5 py-2.5 hover:border-line2 hover:bg-surface2
+      transition-colors disabled:opacity-40;
+  }
+}
+
+/* ticket perforation line (dashed, like the logo) */
+.perforation {
+  background-image: repeating-linear-gradient(
+    to right,
+    theme('colors.line2') 0,
+    theme('colors.line2') 5px,
+    transparent 5px,
+    transparent 11px
+  );
+  height: 1px;
+}
