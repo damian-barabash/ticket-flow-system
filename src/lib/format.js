@@ -8,6 +8,18 @@ export function formatDate(iso) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} · ${hh}:${mm}`
 }
 
+export function formatSize(bytes) {
+  if (bytes == null) return ''
+  const units = ['Б', 'КБ', 'МБ', 'ГБ']
+  let n = bytes
+  let i = 0
+  while (n >= 1024 && i < units.length - 1) {
+    n /= 1024
+    i++
+  }
+  return `${i === 0 ? n : n.toFixed(n < 10 ? 1 : 0)} ${units[i]}`
+}
+
 export function timeAgo(iso) {
   if (!iso) return ''
   const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)

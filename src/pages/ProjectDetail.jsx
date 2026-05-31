@@ -9,6 +9,7 @@ import { CreateTicketModal } from '../components/CreateTicketModal'
 import { TicketDrawer } from '../components/TicketDrawer'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { ManageMembersModal } from '../components/ManageMembersModal'
+import { ReleasesBlock } from '../components/ReleasesBlock'
 import { Tour } from '../components/Tour'
 import { STATUS, STATUS_ORDER, PRIORITY_ORDER } from '../lib/constants'
 
@@ -198,6 +199,9 @@ export default function ProjectDetail() {
                 </button>
               </div>
             </div>
+
+            {/* project releases (files + links) */}
+            <ReleasesBlock projectId={id} />
 
             {/* stat chips */}
             <div className="mb-5 flex flex-wrap gap-2">
