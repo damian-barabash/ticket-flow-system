@@ -27,7 +27,7 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
     const path = `${projectId}/cover_${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage
       .from('project-covers')
-      .upload(path, file, { upsert: true, contentType: file.type })
+      .upload(path, file, { contentType: file.type })
     if (upErr) throw upErr
     const { data } = supabase.storage.from('project-covers').getPublicUrl(path)
     return data.publicUrl

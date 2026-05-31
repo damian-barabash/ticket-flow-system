@@ -23,18 +23,37 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     let active = true
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return
-      setSession(data.session)
-      await loadProfile(data.session?.user?.id)
-      setLoading(false)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, sess) => {
+
+    // Safety net: never let the app hang on the loading spinner.
+    const safety = setTimeout(() => active && setLoading(false), 8000)
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!active) return
+        setSession(data.session)
+        return loadProfile(data.session?.user?.id)
+      })
+      .finally(() => {
+        if (active) {
+          clearTimeout(safety)
+          setLoading(false)
+        }
+      })
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, sess) => {
+      // IMPORTANT: do NOT await Supabase calls inside this callback — it holds the
+      // auth lock and awaiting a query that triggers a token refresh deadlocks.
+      // Update state synchronously and defer the DB read to a microtask.
       setSession(sess)
-      await loadProfile(sess?.user?.id)
+      setTimeout(() => {
+        if (active) loadProfile(sess?.user?.id)
+      }, 0)
     })
+
     return () => {
       active = false
+      clearTimeout(safety)
       sub.subscription.unsubscribe()
     }
   }, [loadProfile])
