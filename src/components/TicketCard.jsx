@@ -3,7 +3,7 @@ import { timeAgo } from '../lib/format'
 import { Avatar } from './ui'
 
 // A ticket rendered like a paper ticket: body + dashed perforation + stub.
-export function TicketCard({ ticket, unread, commentCount = 0, creator, onOpen }) {
+export function TicketCard({ ticket, unread, commentCount = 0, creator, photos = [], onOpen }) {
   const s = STATUS[ticket.status] ?? STATUS.new
   const p = PRIORITY[ticket.priority] ?? PRIORITY.medium
   const c = CATEGORY[ticket.category] ?? CATEGORY.change
@@ -34,6 +34,16 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, onOpen }
         <h3 className="truncate text-[15px] font-medium text-ink">{ticket.title}</h3>
         {ticket.description && (
           <p className="mt-1 line-clamp-1 text-xs text-faint">{ticket.description}</p>
+        )}
+
+        {photos.length > 0 && (
+          <div className="mt-3 flex gap-2">
+            {photos.slice(0, 2).map((url, i) => (
+              <div key={i} className="h-12 w-12 shrink-0 overflow-hidden border border-line sm:h-14 sm:w-14">
+                <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
+              </div>
+            ))}
+          </div>
         )}
 
         <div className="mt-3 flex items-center gap-3 text-faint">

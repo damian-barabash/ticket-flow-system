@@ -33,6 +33,7 @@ export default function ProjectDetail() {
   const [reads, setReads] = useState({})
   const [counts, setCounts] = useState({})
   const [creators, setCreators] = useState({})
+  const [photos, setPhotos] = useState({})
   const [loading, setLoading] = useState(true)
 
   const [tab, setTab] = useState('active') // active | done
@@ -59,12 +60,14 @@ export default function ProjectDetail() {
 
     const ids = list.map((t) => t.id)
     if (ids.length) {
-      const [{ data: cm }, { data: profs }] = await Promise.all([
+      const [{ data: cm }, { data: profs }, { data: at }] = await Promise.all([
         supabase.from('ticket_comments').select('ticket_id').in('ticket_id', ids),
         supabase
           .from('profiles')
           .select('id, full_name, email')
           .in('id', [...new Set(list.map((t) => t.created_by).filter(Boolean))]),
+        // ticket-level photos for card previews
+        supabase.from('attachments').select('ticket_id, path').is('comment_id', null).in('ticket_id', ids).order('created_at'),
       ])
       const cc = {}
       ;(cm ?? []).forEach((c) => (cc[c.ticket_id] = (cc[c.ticket_id] || 0) + 1))
@@ -72,9 +75,29 @@ export default function ProjectDetail() {
       const cr = {}
       ;(profs ?? []).forEach((p) => (cr[p.id] = p))
       setCreators(cr)
+
+      // keep first 2 paths per ticket, batch-sign them (ticket-media is private)
+      const firstTwo = {}
+      ;(at ?? []).forEach((a) => {
+        const arr = firstTwo[a.ticket_id] || (firstTwo[a.ticket_id] = [])
+        if (arr.length < 2 && a.path) arr.push(a.path)
+      })
+      const allPaths = Object.values(firstTwo).flat()
+      const signed = {}
+      if (allPaths.length) {
+        const { data: urls } = await supabase.storage.from('ticket-media').createSignedUrls(allPaths, 3600)
+        ;(urls ?? []).forEach((u) => u.path && (signed[u.path] = u.signedUrl))
+      }
+      const pmap = {}
+      Object.entries(firstTwo).forEach(([tid, paths]) => {
+        const arr = paths.map((p) => signed[p]).filter(Boolean)
+        if (arr.length) pmap[tid] = arr
+      })
+      setPhotos(pmap)
     } else {
       setCounts({})
       setCreators({})
+      setPhotos({})
     }
     setLoading(false)
   }, [id])
@@ -290,6 +313,7 @@ export default function ProjectDetail() {
                     unread={isUnread(t)}
                     commentCount={counts[t.id] || 0}
                     creator={creators[t.created_by]}
+                    photos={photos[t.id]}
                     onOpen={() => setOpenTicket(t.id)}
                   />
                 ))}
