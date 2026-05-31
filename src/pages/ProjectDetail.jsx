@@ -17,9 +17,10 @@ const SORTS = [
   { key: 'priority', ru: 'Приоритет' },
 ]
 
+// Done tickets live in their own tab, so the active board's status filter omits "done".
 const FILTERS = [
   { key: 'all', ru: 'Все' },
-  ...STATUS_ORDER.map((k) => ({ key: k, ru: STATUS[k].ru, dot: STATUS[k].dot })),
+  ...STATUS_ORDER.filter((k) => k !== 'done').map((k) => ({ key: k, ru: STATUS[k].ru, dot: STATUS[k].dot })),
 ]
 
 export default function ProjectDetail() {
@@ -34,6 +35,7 @@ export default function ProjectDetail() {
   const [creators, setCreators] = useState({})
   const [loading, setLoading] = useState(true)
 
+  const [tab, setTab] = useState('active') // active | done
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('recent')
   const [query, setQuery] = useState('')
@@ -93,12 +95,20 @@ export default function ProjectDetail() {
     return o
   }, [tickets])
 
+  const tabCounts = useMemo(() => {
+    let done = 0
+    tickets.forEach((t) => t.status === 'done' && done++)
+    return { done, active: tickets.length - done }
+  }, [tickets])
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     const rank = (p) => PRIORITY_ORDER.indexOf(p) // low=0 … urgent=3
     return tickets
       .filter((t) => {
-        if (filter !== 'all' && t.status !== filter) return false
+        // tab split: done tickets are tucked away in their own tab
+        if (tab === 'done' ? t.status !== 'done' : t.status === 'done') return false
+        if (tab === 'active' && filter !== 'all' && t.status !== filter) return false
         if (q && !(`${t.title} ${t.description || ''}`.toLowerCase().includes(q) || String(t.number).includes(q)))
           return false
         return true
@@ -111,7 +121,7 @@ export default function ProjectDetail() {
         // tie-break / default: newest first
         return new Date(b.created_at) - new Date(a.created_at)
       })
-  }, [tickets, filter, sort, query])
+  }, [tickets, tab, filter, sort, query])
 
   function isUnread(t) {
     const r = reads[t.id]
@@ -177,22 +187,52 @@ export default function ProjectDetail() {
               ))}
             </div>
 
+            {/* active / done tabs */}
+            <div className="mb-5 flex gap-6 border-b border-line">
+              {[
+                { key: 'active', ru: 'Активные', n: tabCounts.active },
+                { key: 'done', ru: 'Выполненные', n: tabCounts.done },
+              ].map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => {
+                    setTab(t.key)
+                    setFilter('all')
+                  }}
+                  className={`-mb-px flex items-center gap-2 border-b-2 pb-2.5 font-mono uppercase tracking-label text-[11px] transition-colors ${
+                    tab === t.key ? 'border-accent text-ink' : 'border-transparent text-faint hover:text-muted'
+                  }`}
+                >
+                  {t.ru}
+                  <span
+                    className={`font-mono text-[10px] ${tab === t.key ? 'text-accent' : 'text-faint'}`}
+                  >
+                    {t.n}
+                  </span>
+                </button>
+              ))}
+            </div>
+
             {/* toolbar */}
             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
-                {FILTERS.map((f) => (
-                  <button
-                    key={f.key}
-                    onClick={() => setFilter(f.key)}
-                    className={`flex shrink-0 items-center gap-1.5 border px-3 py-1.5 font-mono uppercase tracking-label text-[10px] transition-colors ${
-                      filter === f.key ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
-                    }`}
-                  >
-                    {f.dot && <span className="inline-block h-1.5 w-1.5" style={{ background: f.dot }} />}
-                    {f.ru}
-                  </button>
-                ))}
-              </div>
+              {tab === 'active' ? (
+                <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
+                  {FILTERS.map((f) => (
+                    <button
+                      key={f.key}
+                      onClick={() => setFilter(f.key)}
+                      className={`flex shrink-0 items-center gap-1.5 border px-3 py-1.5 font-mono uppercase tracking-label text-[10px] transition-colors ${
+                        filter === f.key ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
+                      }`}
+                    >
+                      {f.dot && <span className="inline-block h-1.5 w-1.5" style={{ background: f.dot }} />}
+                      {f.ru}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div />
+              )}
               <div className="flex items-center gap-2 sm:ml-auto">
                 <span className="label hidden sm:inline">Сорт.</span>
                 <div className="flex gap-1.5">
@@ -220,14 +260,22 @@ export default function ProjectDetail() {
             {/* list */}
             {visible.length === 0 ? (
               <EmptyState
-                title={tickets.length === 0 ? 'Пока нет тикетов' : 'Ничего не найдено'}
+                title={
+                  tab === 'done'
+                    ? 'Нет выполненных тикетов'
+                    : tickets.length === 0
+                    ? 'Пока нет тикетов'
+                    : 'Ничего не найдено'
+                }
                 hint={
-                  tickets.length === 0
+                  tab === 'done'
+                    ? 'Сюда попадают тикеты со статусом «Выполнен».'
+                    : tickets.length === 0
                     ? 'Создайте первый тикет — опишите, что нужно поправить или добавить.'
                     : 'Измените фильтр или запрос.'
                 }
               >
-                {tickets.length === 0 && (
+                {tab === 'active' && tickets.length === 0 && (
                   <button onClick={() => setShowCreate(true)} className="btn-ghost">
                     + Новый тикет
                   </button>
