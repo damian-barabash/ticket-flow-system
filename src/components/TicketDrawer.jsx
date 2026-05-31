@@ -139,6 +139,25 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
     }
   }
 
+  const canDeletePhoto = useCallback((a) => isAdmin || a.uploaded_by === user.id, [isAdmin, user.id])
+
+  // delete a single attachment: storage object first, then the DB row
+  async function deletePhoto(att) {
+    if (!canDeletePhoto(att)) return
+    if (!confirm('Удалить это фото?')) return
+    setAtts((p) => p.map((a) => (a.id === att.id ? { ...a, deleting: true } : a)))
+    try {
+      if (att.path) await supabase.storage.from('ticket-media').remove([att.path])
+      const { error } = await supabase.from('attachments').delete().eq('id', att.id)
+      if (error) throw error
+      setAtts((p) => p.filter((a) => a.id !== att.id))
+      onChanged?.()
+    } catch (err) {
+      alert('Не удалось удалить фото: ' + (err.message || err))
+      setAtts((p) => p.map((a) => (a.id === att.id ? { ...a, deleting: false } : a)))
+    }
+  }
+
   async function deleteTicket() {
     if (!isAdmin) return
     if (!confirm(`Удалить тикет «${ticket.title}»? Это действие необратимо — комментарии и фото будут удалены.`)) return
@@ -326,7 +345,13 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     onChange={(e) => addTicketPhotos(e.target.files)}
                   />
                 </div>
-                <TicketPhotos atts={atts.filter((a) => !a.comment_id)} onOpen={(i) => setLb(i)} all={lbImages} />
+                <TicketPhotos
+                  atts={atts.filter((a) => !a.comment_id)}
+                  onOpen={(i) => setLb(i)}
+                  all={lbImages}
+                  canDelete={canDeletePhoto}
+                  onDelete={deletePhoto}
+                />
               </div>
 
               {/* timeline */}
@@ -340,6 +365,8 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                       mine={item.data.author_id === user.id}
                       atts={atts.filter((a) => a.comment_id === item.data.id)}
                       onOpenPhoto={(att) => setLb(lbImages.findIndex((x) => x.id === att.id))}
+                      canDelete={canDeletePhoto}
+                      onDelete={deletePhoto}
                     />
                   ) : (
                     <ActivityRow key={`a${item.data.id}`} a={item.data} actor={profiles[item.data.actor_id]} />
@@ -414,24 +441,41 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   )
 }
 
-function TicketPhotos({ atts, onOpen, all }) {
+function PhotoDeleteBtn({ att, onDelete }) {
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation()
+        onDelete(att)
+      }}
+      disabled={att.deleting}
+      className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center bg-bg/85 text-[10px] text-muted opacity-100 transition-opacity hover:text-accent disabled:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+      title="Удалить фото"
+      aria-label="Удалить фото"
+    >
+      {att.deleting ? <Spinner className="h-3 w-3" /> : '✕'}
+    </button>
+  )
+}
+
+function TicketPhotos({ atts, onOpen, all, canDelete, onDelete }) {
   if (!atts.length) return null
   return (
     <div className="mb-5 grid grid-cols-3 gap-2 sm:grid-cols-4">
       {atts.map((a) => (
-        <button
-          key={a.id}
-          onClick={() => onOpen(all.findIndex((x) => x.id === a.id))}
-          className="aspect-square overflow-hidden border border-line"
-        >
-          {a.signed ? <img src={a.signed} alt="" className="h-full w-full object-cover" /> : <div className="dotgrid h-full w-full" />}
-        </button>
+        <div key={a.id} className="group relative aspect-square overflow-hidden border border-line">
+          <button onClick={() => onOpen(all.findIndex((x) => x.id === a.id))} className="h-full w-full">
+            {a.signed ? <img src={a.signed} alt="" className="h-full w-full object-cover" /> : <div className="dotgrid h-full w-full" />}
+          </button>
+          {canDelete?.(a) && <PhotoDeleteBtn att={a} onDelete={onDelete} />}
+        </div>
       ))}
     </div>
   )
 }
 
-function CommentRow({ comment, author, mine, atts, onOpenPhoto }) {
+function CommentRow({ comment, author, mine, atts, onOpenPhoto, canDelete, onDelete }) {
   return (
     <div className={`flex gap-3 ${mine ? 'flex-row-reverse text-right' : ''}`}>
       <Avatar name={author?.full_name} email={author?.email} size={28} />
@@ -450,9 +494,12 @@ function CommentRow({ comment, author, mine, atts, onOpenPhoto }) {
         {atts.length > 0 && (
           <div className={`mt-2 flex flex-wrap gap-2 ${mine ? 'justify-end' : ''}`}>
             {atts.map((a) => (
-              <button key={a.id} onClick={() => onOpenPhoto(a)} className="h-16 w-16 overflow-hidden border border-line">
-                {a.signed ? <img src={a.signed} alt="" className="h-full w-full object-cover" /> : <div className="dotgrid h-full w-full" />}
-              </button>
+              <div key={a.id} className="group relative h-16 w-16 overflow-hidden border border-line">
+                <button onClick={() => onOpenPhoto(a)} className="h-full w-full">
+                  {a.signed ? <img src={a.signed} alt="" className="h-full w-full object-cover" /> : <div className="dotgrid h-full w-full" />}
+                </button>
+                {canDelete?.(a) && <PhotoDeleteBtn att={a} onDelete={onDelete} />}
+              </div>
             ))}
           </div>
         )}
