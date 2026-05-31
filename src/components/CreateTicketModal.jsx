@@ -69,7 +69,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           .from('ticket-media')
           .upload(path, file, { contentType: file.type })
         if (upErr) throw upErr
-        await supabase.from('attachments').insert({
+        const { error: aErr } = await supabase.from('attachments').insert({
           ticket_id: ticket.id,
           path,
           name: file.name,
@@ -77,6 +77,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           size: file.size,
           uploaded_by: user.id,
         })
+        if (aErr) throw aErr
       }
 
       notify('ticket_created', ticket.id)

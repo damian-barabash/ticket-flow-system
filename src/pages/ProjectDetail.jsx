@@ -10,7 +10,12 @@ import { TicketDrawer } from '../components/TicketDrawer'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { ManageMembersModal } from '../components/ManageMembersModal'
 import { Tour } from '../components/Tour'
-import { STATUS, STATUS_ORDER } from '../lib/constants'
+import { STATUS, STATUS_ORDER, PRIORITY_ORDER } from '../lib/constants'
+
+const SORTS = [
+  { key: 'recent', ru: 'Свежие' },
+  { key: 'priority', ru: 'Приоритет' },
+]
 
 const FILTERS = [
   { key: 'all', ru: 'Все' },
@@ -30,6 +35,7 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true)
 
   const [filter, setFilter] = useState('all')
+  const [sort, setSort] = useState('recent')
   const [query, setQuery] = useState('')
   const [openTicket, setOpenTicket] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
@@ -89,13 +95,23 @@ export default function ProjectDetail() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return tickets.filter((t) => {
-      if (filter !== 'all' && t.status !== filter) return false
-      if (q && !(`${t.title} ${t.description || ''}`.toLowerCase().includes(q) || String(t.number).includes(q)))
-        return false
-      return true
-    })
-  }, [tickets, filter, query])
+    const rank = (p) => PRIORITY_ORDER.indexOf(p) // low=0 … urgent=3
+    return tickets
+      .filter((t) => {
+        if (filter !== 'all' && t.status !== filter) return false
+        if (q && !(`${t.title} ${t.description || ''}`.toLowerCase().includes(q) || String(t.number).includes(q)))
+          return false
+        return true
+      })
+      .sort((a, b) => {
+        if (sort === 'priority') {
+          const d = rank(b.priority) - rank(a.priority)
+          if (d) return d
+        }
+        // tie-break / default: newest first
+        return new Date(b.created_at) - new Date(a.created_at)
+      })
+  }, [tickets, filter, sort, query])
 
   function isUnread(t) {
     const r = reads[t.id]
@@ -177,12 +193,28 @@ export default function ProjectDetail() {
                   </button>
                 ))}
               </div>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Поиск по тикетам…"
-                className="field sm:ml-auto sm:w-56"
-              />
+              <div className="flex items-center gap-2 sm:ml-auto">
+                <span className="label hidden sm:inline">Сорт.</span>
+                <div className="flex gap-1.5">
+                  {SORTS.map((s) => (
+                    <button
+                      key={s.key}
+                      onClick={() => setSort(s.key)}
+                      className={`shrink-0 border px-3 py-1.5 font-mono uppercase tracking-label text-[10px] transition-colors ${
+                        sort === s.key ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
+                      }`}
+                    >
+                      {s.ru}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Поиск…"
+                  className="field w-full sm:w-44"
+                />
+              </div>
             </div>
 
             {/* list */}

@@ -19,8 +19,11 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const [sending, setSending] = useState(false)
   const [files, setFiles] = useState([])
   const [lb, setLb] = useState(null)
+  const [uploadingPhotos, setUploadingPhotos] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const scrollRef = useRef(null)
   const fileRef = useRef(null)
+  const addPhotoRef = useRef(null)
 
   const markRead = useCallback(async () => {
     await supabase
@@ -100,8 +103,62 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
     if (imgs.length) setFiles((p) => [...p, ...imgs.map((f) => ({ file: f, url: URL.createObjectURL(f) }))])
   }
 
+  // upload one image to ticket-media/<ticketId>/... and return its DB attachment payload
+  async function uploadOne(file, commentId = null) {
+    const ext = file.name.split('.').pop() || 'png'
+    const path = `${ticketId}/${crypto.randomUUID()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('ticket-media').upload(path, file, { contentType: file.type })
+    if (upErr) throw upErr
+    const { error: aErr } = await supabase.from('attachments').insert({
+      ticket_id: ticketId,
+      comment_id: commentId,
+      path,
+      name: file.name,
+      content_type: file.type,
+      size: file.size,
+      uploaded_by: user.id,
+    })
+    if (aErr) throw aErr
+  }
+
+  // add ticket-level photos (no comment) directly to an existing ticket
+  async function addTicketPhotos(list) {
+    const imgs = Array.from(list || []).filter((f) => f.type.startsWith('image/'))
+    if (!imgs.length) return
+    setUploadingPhotos(true)
+    try {
+      for (const file of imgs) await uploadOne(file)
+      await markRead()
+      onChanged?.()
+      await load()
+    } catch (err) {
+      alert('Не удалось загрузить фото: ' + (err.message || err))
+    } finally {
+      setUploadingPhotos(false)
+      if (addPhotoRef.current) addPhotoRef.current.value = ''
+    }
+  }
+
+  async function deleteTicket() {
+    if (!isAdmin) return
+    if (!confirm(`Удалить тикет «${ticket.title}»? Это действие необратимо — комментарии и фото будут удалены.`)) return
+    setDeleting(true)
+    try {
+      // remove storage objects first (DB cascade won't touch the bucket)
+      const paths = atts.map((a) => a.path).filter(Boolean)
+      if (paths.length) await supabase.storage.from('ticket-media').remove(paths)
+      const { error } = await supabase.from('tickets').delete().eq('id', ticketId)
+      if (error) throw error
+      onChanged?.()
+      onClose()
+    } catch (err) {
+      alert('Не удалось удалить тикет: ' + (err.message || err))
+      setDeleting(false)
+    }
+  }
+
   async function send(e) {
-    e.preventDefault()
+    e?.preventDefault()
     if (!body.trim() && files.length === 0) return
     setSending(true)
     try {
@@ -110,28 +167,15 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
         .insert({ ticket_id: ticketId, author_id: user.id, body: body.trim() || '(фото)' })
         .select()
         .single()
-      for (const { file } of files) {
-        const ext = file.name.split('.').pop() || 'png'
-        const path = `${ticketId}/${crypto.randomUUID()}.${ext}`
-        const { error: upErr } = await supabase.storage.from('ticket-media').upload(path, file, { contentType: file.type })
-        if (!upErr) {
-          await supabase.from('attachments').insert({
-            ticket_id: ticketId,
-            comment_id: comment.id,
-            path,
-            name: file.name,
-            content_type: file.type,
-            size: file.size,
-            uploaded_by: user.id,
-          })
-        }
-      }
+      for (const { file } of files) await uploadOne(file, comment.id)
       setBody('')
       setFiles([])
       await markRead()
       notify('comment_added', ticketId)
       onChanged?.()
       load()
+    } catch (err) {
+      alert('Не удалось отправить: ' + (err.message || err))
     } finally {
       setSending(false)
     }
@@ -171,9 +215,22 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                   </div>
                   <h2 className="text-lg font-semibold leading-snug text-ink">{ticket.title}</h2>
                 </div>
-                <button onClick={onClose} className="shrink-0 text-faint hover:text-ink" aria-label="Закрыть">
-                  ✕
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  {isAdmin && (
+                    <button
+                      onClick={deleteTicket}
+                      disabled={deleting}
+                      className="px-1.5 text-faint transition-colors hover:text-accent disabled:opacity-50"
+                      title="Удалить тикет"
+                      aria-label="Удалить тикет"
+                    >
+                      {deleting ? <Spinner className="h-3.5 w-3.5" /> : '🗑'}
+                    </button>
+                  )}
+                  <button onClick={onClose} className="px-1.5 text-faint hover:text-ink" aria-label="Закрыть">
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {/* status control */}
@@ -249,7 +306,28 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
               )}
 
               {/* ticket-level photos (no comment) */}
-              <TicketPhotos atts={atts.filter((a) => !a.comment_id)} onOpen={(i) => setLb(i)} all={lbImages} />
+              <div className="mb-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="label">Фото тикета</span>
+                  <button
+                    type="button"
+                    onClick={() => addPhotoRef.current?.click()}
+                    disabled={uploadingPhotos}
+                    className="label flex items-center gap-1.5 text-muted transition-colors hover:text-ink disabled:opacity-50"
+                  >
+                    {uploadingPhotos ? <Spinner className="h-3 w-3" /> : '＋'} добавить
+                  </button>
+                  <input
+                    ref={addPhotoRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => addTicketPhotos(e.target.files)}
+                  />
+                </div>
+                <TicketPhotos atts={atts.filter((a) => !a.comment_id)} onOpen={(i) => setLb(i)} all={lbImages} />
+              </div>
 
               {/* timeline */}
               <div className="mt-2 space-y-4">
@@ -306,10 +384,13 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     if (imgs.length) addFiles(imgs)
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send(e)
+                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault()
+                      send(e)
+                    }
                   }}
                   rows={1}
-                  placeholder="Комментарий…"
+                  placeholder="Комментарий…  (Enter — отправить, Shift+Enter — перенос)"
                   className="field max-h-32 flex-1 resize-none border border-line px-3 py-2.5"
                 />
                 <button type="submit" disabled={sending} className="btn-solid shrink-0 px-4 py-2.5">
