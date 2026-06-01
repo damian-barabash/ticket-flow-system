@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { notify } from '../lib/notify'
-import { STATUS, STATUS_ORDER, PRIORITY, PRIORITY_ORDER, CATEGORY, ACTIVITY_RU } from '../lib/constants'
+import { STATUS, STATUS_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
 import { formatDate, timeAgo } from '../lib/format'
 import { Spinner, Avatar, StatusBadge } from './ui'
 import { Lightbox } from './Lightbox'
@@ -11,6 +12,7 @@ import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const { user, isAdmin } = useAuth()
+  const { t } = useT()
   const [ticket, setTicket] = useState(null)
   const [comments, setComments] = useState([])
   const [activity, setActivity] = useState([])
@@ -134,7 +136,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
       onChanged?.()
       await load()
     } catch (err) {
-      alert('Не удалось загрузить фото: ' + (err.message || err))
+      alert(t('ticket.errUploadPhoto') + (err.message || err))
     } finally {
       setUploadingPhotos(false)
       if (addPhotoRef.current) addPhotoRef.current.value = ''
@@ -146,7 +148,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   // delete a single attachment: storage object first, then the DB row
   async function deletePhoto(att) {
     if (!canDeletePhoto(att)) return
-    if (!confirm('Удалить это фото?')) return
+    if (!confirm(t('ticket.confirmDeletePhoto'))) return
     setAtts((p) => p.map((a) => (a.id === att.id ? { ...a, deleting: true } : a)))
     try {
       if (att.path) await supabase.storage.from('ticket-media').remove([att.path])
@@ -155,14 +157,14 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
       setAtts((p) => p.filter((a) => a.id !== att.id))
       onChanged?.()
     } catch (err) {
-      alert('Не удалось удалить фото: ' + (err.message || err))
+      alert(t('ticket.errDeletePhoto') + (err.message || err))
       setAtts((p) => p.map((a) => (a.id === att.id ? { ...a, deleting: false } : a)))
     }
   }
 
   async function deleteTicket() {
     if (!isAdmin) return
-    if (!confirm(`Удалить тикет «${ticket.title}»? Это действие необратимо — комментарии и фото будут удалены.`)) return
+    if (!confirm(t('ticket.confirmDeleteTicket', { title: ticket.title }))) return
     setDeleting(true)
     try {
       // remove storage objects first (DB cascade won't touch the bucket)
@@ -173,7 +175,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
       onChanged?.()
       onClose()
     } catch (err) {
-      alert('Не удалось удалить тикет: ' + (err.message || err))
+      alert(t('ticket.errDeleteTicket') + (err.message || err))
       setDeleting(false)
     }
   }
@@ -185,7 +187,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
     try {
       const { data: comment } = await supabase
         .from('ticket_comments')
-        .insert({ ticket_id: ticketId, author_id: user.id, body: body.trim() || '(фото)' })
+        .insert({ ticket_id: ticketId, author_id: user.id, body: body.trim() || t('ticket.photoFallback') })
         .select()
         .single()
       for (const { file } of files) await uploadOne(file, comment.id)
@@ -196,7 +198,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
       onChanged?.()
       load()
     } catch (err) {
-      alert('Не удалось отправить: ' + (err.message || err))
+      alert(t('ticket.errSend') + (err.message || err))
     } finally {
       setSending(false)
     }
@@ -232,7 +234,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     <span className="font-mono text-[11px] text-faint">
                       № {String(ticket.number).padStart(3, '0')}
                     </span>
-                    <span className="label-sm">{CATEGORY[ticket.category]?.ru}</span>
+                    <span className="label-sm">{t('enum.category.' + ticket.category)}</span>
                   </div>
                   <h2 className="text-lg font-semibold leading-snug text-ink">{ticket.title}</h2>
                 </div>
@@ -242,13 +244,13 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                       onClick={deleteTicket}
                       disabled={deleting}
                       className="px-1.5 text-faint transition-colors hover:text-accent disabled:opacity-50"
-                      title="Удалить тикет"
-                      aria-label="Удалить тикет"
+                      title={t('ticket.deleteTicket')}
+                      aria-label={t('ticket.deleteTicket')}
                     >
                       {deleting ? <Spinner className="h-3.5 w-3.5" /> : '🗑'}
                     </button>
                   )}
-                  <button onClick={onClose} className="px-1.5 text-faint hover:text-ink" aria-label="Закрыть">
+                  <button onClick={onClose} className="px-1.5 text-faint hover:text-ink" aria-label={t('common.close')}>
                     ✕
                   </button>
                 </div>
@@ -256,7 +258,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
 
               {/* status control */}
               <div className="mb-3">
-                <span className="label mb-2 block">Статус</span>
+                <span className="label mb-2 block">{t('ticket.status')}</span>
                 {isAdmin ? (
                   <div className="flex flex-wrap gap-1.5">
                     {STATUS_ORDER.map((k) => {
@@ -273,7 +275,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                           }
                         >
                           <span className="inline-block h-1.5 w-1.5" style={{ background: active ? '#0A0A0B' : STATUS[k].dot }} />
-                          {STATUS[k].ru}
+                          {t('enum.status.' + k)}
                         </button>
                       )
                     })}
@@ -286,7 +288,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
               {/* priority control */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 <div>
-                  <span className="label mb-1.5 block">Приоритет</span>
+                  <span className="label mb-1.5 block">{t('ticket.priority')}</span>
                   {isAdmin ? (
                     <div className="flex gap-1.5">
                       {PRIORITY_ORDER.map((k) => (
@@ -300,18 +302,18 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                               : { borderColor: '#262629', color: '#8A8A92' }
                           }
                         >
-                          {PRIORITY[k].ru}
+                          {t('enum.priority.' + k)}
                         </button>
                       ))}
                     </div>
                   ) : (
                     <span className="font-mono text-[11px]" style={{ color: PRIORITY[ticket.priority]?.text }}>
-                      {PRIORITY[ticket.priority]?.ru}
+                      {t('enum.priority.' + ticket.priority)}
                     </span>
                   )}
                 </div>
                 <div>
-                  <span className="label mb-1.5 block">Автор</span>
+                  <span className="label mb-1.5 block">{t('ticket.author')}</span>
                   <span className="flex items-center gap-2 text-xs text-muted">
                     <Avatar name={profiles[ticket.created_by]?.full_name} email={profiles[ticket.created_by]?.email} size={20} />
                     {profiles[ticket.created_by]?.full_name || profiles[ticket.created_by]?.email || '—'}
@@ -329,14 +331,14 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
               {/* ticket-level photos (no comment) */}
               <div className="mb-5">
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="label">Фото тикета</span>
+                  <span className="label">{t('ticket.photos')}</span>
                   <button
                     type="button"
                     onClick={() => addPhotoRef.current?.click()}
                     disabled={uploadingPhotos}
                     className="label flex items-center gap-1.5 text-muted transition-colors hover:text-ink disabled:opacity-50"
                   >
-                    {uploadingPhotos ? <Spinner className="h-3 w-3" /> : '＋'} добавить
+                    {uploadingPhotos ? <Spinner className="h-3 w-3" /> : '＋'} {t('ticket.addPhoto')}
                   </button>
                   <input
                     ref={addPhotoRef}
@@ -400,7 +402,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   className="shrink-0 border border-line px-3 py-2.5 text-muted hover:border-line2 hover:text-ink"
-                  title="Прикрепить фото"
+                  title={t('ticket.attachPhoto')}
                 >
                   ＋
                 </button>
@@ -419,11 +421,11 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     }
                   }}
                   rows={1}
-                  placeholder="Комментарий…  (Enter — отправить, Shift+Enter — перенос)"
+                  placeholder={t('ticket.composerPlaceholder')}
                   className="field max-h-32 flex-1 resize-none border border-line px-3 py-2.5"
                 />
                 <button type="submit" disabled={sending} className="btn-solid shrink-0 px-4 py-2.5">
-                  {sending ? <Spinner className="border-bg/40 border-t-bg" /> : 'Отпр.'}
+                  {sending ? <Spinner className="border-bg/40 border-t-bg" /> : t('ticket.send')}
                 </button>
               </div>
             </form>
@@ -444,6 +446,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
 }
 
 function PhotoDeleteBtn({ att, onDelete }) {
+  const { t } = useT()
   return (
     <button
       type="button"
@@ -453,8 +456,8 @@ function PhotoDeleteBtn({ att, onDelete }) {
       }}
       disabled={att.deleting}
       className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center bg-bg/85 text-[10px] text-muted opacity-100 transition-opacity hover:text-accent disabled:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-      title="Удалить фото"
-      aria-label="Удалить фото"
+      title={t('ticket.deletePhoto')}
+      aria-label={t('ticket.deletePhoto')}
     >
       {att.deleting ? <Spinner className="h-3 w-3" /> : '✕'}
     </button>
@@ -478,12 +481,13 @@ function TicketPhotos({ atts, onOpen, all, canDelete, onDelete }) {
 }
 
 function CommentRow({ comment, author, mine, atts, onOpenPhoto, canDelete, onDelete }) {
+  const { t } = useT()
   return (
     <div className={`flex gap-3 ${mine ? 'flex-row-reverse text-right' : ''}`}>
       <Avatar name={author?.full_name} email={author?.email} size={28} />
       <div className={`min-w-0 max-w-[82%] ${mine ? 'items-end' : ''}`}>
         <div className={`mb-1 flex items-center gap-2 ${mine ? 'justify-end' : ''}`}>
-          <span className="text-xs text-muted">{mine ? 'Вы' : author?.full_name || author?.email || '—'}</span>
+          <span className="text-xs text-muted">{mine ? t('ticket.you') : author?.full_name || author?.email || '—'}</span>
           <span className="label-sm">{timeAgo(comment.created_at)}</span>
         </div>
         <div
@@ -511,10 +515,11 @@ function CommentRow({ comment, author, mine, atts, onOpenPhoto, canDelete, onDel
 }
 
 function ActivityRow({ a, actor }) {
-  const who = actor?.full_name || actor?.email || 'Кто-то'
-  let detail = ACTIVITY_RU[a.type] || a.type
-  if (a.type === 'status_changed') detail = `сменил статус → ${STATUS[a.to_val]?.ru || a.to_val}`
-  if (a.type === 'priority_changed') detail = `приоритет → ${PRIORITY[a.to_val]?.ru || a.to_val}`
+  const { t } = useT()
+  const who = actor?.full_name || actor?.email || t('ticket.someone')
+  let detail = t('enum.activity.' + a.type)
+  if (a.type === 'status_changed') detail = t('ticket.actStatusTo', { v: STATUS[a.to_val] ? t('enum.status.' + a.to_val) : a.to_val })
+  if (a.type === 'priority_changed') detail = t('ticket.actPriorityTo', { v: PRIORITY[a.to_val] ? t('enum.priority.' + a.to_val) : a.to_val })
   return (
     <div className="flex items-center gap-2 py-0.5">
       <span className="h-1 w-1 shrink-0 rounded-full bg-line2" />

@@ -1,4 +1,5 @@
-import { STATUS, PRIORITY, CATEGORY } from '../lib/constants'
+import { STATUS, PRIORITY } from '../lib/constants'
+import { useT } from '../context/LangContext'
 
 export function Spinner({ className = '' }) {
   return (
@@ -9,7 +10,9 @@ export function Spinner({ className = '' }) {
 }
 
 export function StatusBadge({ status, size = 'md' }) {
+  const { t } = useT()
   const s = STATUS[status] ?? STATUS.new
+  const key = STATUS[status] ? status : 'new'
   const pad = size === 'sm' ? 'px-2 py-0.5 text-[9px]' : 'px-2.5 py-1 text-[10px]'
   return (
     <span
@@ -17,23 +20,25 @@ export function StatusBadge({ status, size = 'md' }) {
       style={{ color: s.text }}
     >
       <span className="inline-block h-1.5 w-1.5" style={{ background: s.dot }} />
-      {s.ru}
+      {t('enum.status.' + key)}
     </span>
   )
 }
 
 export function PriorityTag({ priority }) {
+  const { t } = useT()
   const p = PRIORITY[priority] ?? PRIORITY.medium
+  const key = PRIORITY[priority] ? priority : 'medium'
   return (
     <span className="font-mono uppercase tracking-label text-[10px]" style={{ color: p.text }}>
-      {p.ru}
+      {t('enum.priority.' + key)}
     </span>
   )
 }
 
 export function CategoryTag({ category }) {
-  const c = CATEGORY[category] ?? CATEGORY.change
-  return <span className="label">{c.ru}</span>
+  const { t } = useT()
+  return <span className="label">{t('enum.category.' + category)}</span>
 }
 
 export function Avatar({ name, email, size = 28 }) {
@@ -67,6 +72,7 @@ export function EmptyState({ title, hint, children }) {
 }
 
 export function Modal({ open, onClose, title, children, width = 'max-w-lg' }) {
+  const { t } = useT()
   if (!open) return null
   return (
     <div
@@ -82,7 +88,7 @@ export function Modal({ open, onClose, title, children, width = 'max-w-lg' }) {
           <button
             onClick={onClose}
             className="font-mono text-faint hover:text-ink transition-colors"
-            aria-label="Закрыть"
+            aria-label={t('common.close')}
           >
             ✕
           </button>

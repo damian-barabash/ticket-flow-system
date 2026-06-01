@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
 import { Spinner, EmptyState, Avatar, Modal } from '../components/ui'
 
 export default function AdminUsers() {
   const navigate = useNavigate()
+  const { t } = useT()
   const [users, setUsers] = useState([])
   const [projects, setProjects] = useState([])
   const [membership, setMembership] = useState({})
@@ -31,11 +33,11 @@ export default function AdminUsers() {
   }, [load])
 
   async function removeUser(u) {
-    if (!confirm(`Удалить пользователя ${u.email}? Это действие необратимо.`)) return
+    if (!confirm(t('users.confirmDelete', { email: u.email }))) return
     const { error } = await supabase.functions.invoke('create-user', {
       body: { action: 'delete', user_id: u.id },
     })
-    if (error) alert('Ошибка удаления: ' + error.message)
+    if (error) alert(t('users.errDelete') + error.message)
     load()
   }
 
@@ -47,17 +49,17 @@ export default function AdminUsers() {
       <TopBar />
       <main className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 sm:py-8">
         <button onClick={() => navigate('/projects')} className="label mb-5 hover:text-ink transition-colors">
-          ← К проектам
+          {t('common.toProjects')}
         </button>
 
         <div className="mb-6 flex items-end justify-between gap-4">
           <div>
-            <span className="label">Доступ · MMXXVI</span>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Пользователи</h1>
-            <p className="mt-1 text-sm text-faint">Клиенты, администраторы и их проекты</p>
+            <span className="label">{t('users.label')} · MMXXVI</span>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t('users.heading')}</h1>
+            <p className="mt-1 text-sm text-faint">{t('users.sub')}</p>
           </div>
           <button onClick={() => setShowCreate(true)} className="btn-solid">
-            + Новый
+            {t('users.new')}
           </button>
         </div>
 
@@ -67,15 +69,15 @@ export default function AdminUsers() {
           </div>
         ) : (
           <div className="space-y-8">
-            <UserGroup title="Администраторы" users={admins} membership={membership} />
+            <UserGroup title={t('users.admins')} users={admins} membership={membership} />
             {clients.length === 0 ? (
-              <EmptyState title="Нет клиентов" hint="Создайте первого клиента и привяжите к проектам.">
+              <EmptyState title={t('users.emptyTitle')} hint={t('users.emptyHint')}>
                 <button onClick={() => setShowCreate(true)} className="btn-ghost">
-                  + Новый пользователь
+                  {t('users.emptyBtn')}
                 </button>
               </EmptyState>
             ) : (
-              <UserGroup title="Клиенты" users={clients} membership={membership} onRemove={removeUser} />
+              <UserGroup title={t('users.clients')} users={clients} membership={membership} onRemove={removeUser} />
             )}
           </div>
         )}
@@ -94,6 +96,7 @@ export default function AdminUsers() {
 }
 
 function UserGroup({ title, users, membership, onRemove }) {
+  const { t } = useT()
   if (!users.length) return null
   return (
     <section>
@@ -107,14 +110,14 @@ function UserGroup({ title, users, membership, onRemove }) {
               {u.full_name && <div className="truncate text-xs text-faint">{u.email}</div>}
             </div>
             {u.role !== 'admin' && (
-              <span className="label-sm hidden sm:inline">{membership[u.id] || 0} проектов</span>
+              <span className="label-sm hidden sm:inline">{t('users.projectsCount', { n: membership[u.id] || 0 })}</span>
             )}
             {u.role === 'admin' ? (
               <span className="label-sm text-accent">admin</span>
             ) : (
               onRemove && (
                 <button onClick={() => onRemove(u)} className="label-sm text-faint hover:text-accent">
-                  удалить
+                  {t('users.remove')}
                 </button>
               )
             )}
@@ -126,6 +129,7 @@ function UserGroup({ title, users, membership, onRemove }) {
 }
 
 function CreateUserModal({ open, onClose, onCreated, projects }) {
+  const { t } = useT()
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
@@ -168,19 +172,19 @@ function CreateUserModal({ open, onClose, onCreated, projects }) {
       onCreated?.()
       onClose()
     } catch (err) {
-      setError(err.message || 'Ошибка создания (проверьте, что Edge Function create-user задеплоена)')
+      setError(err.message || t('users.errCreate'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Новый пользователь" width="max-w-lg">
+    <Modal open={open} onClose={onClose} title={t('users.modalTitle')} width="max-w-lg">
       <form onSubmit={submit}>
-        <label className="label mb-2 block">Имя</label>
-        <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Имя клиента" className="field mb-5" />
+        <label className="label mb-2 block">{t('users.name')}</label>
+        <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('users.namePlaceholder')} className="field mb-5" />
 
-        <label className="label mb-2 block">Email</label>
+        <label className="label mb-2 block">{t('common.email')}</label>
         <input
           type="email"
           required
@@ -190,23 +194,23 @@ function CreateUserModal({ open, onClose, onCreated, projects }) {
           className="field mb-5"
         />
 
-        <label className="label mb-2 block">Пароль</label>
+        <label className="label mb-2 block">{t('users.password')}</label>
         <div className="mb-5 flex gap-2">
           <input
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Задайте пароль"
+            placeholder={t('users.passwordPlaceholder')}
             className="field flex-1"
           />
           <button type="button" onClick={genPassword} className="btn-ghost shrink-0">
-            Сгенерировать
+            {t('users.generate')}
           </button>
         </div>
 
         {projects.length > 0 && (
           <>
-            <label className="label mb-2 block">Доступ к проектам</label>
+            <label className="label mb-2 block">{t('users.access')}</label>
             <div className="mb-5 flex flex-wrap gap-2">
               {projects.map((p) => (
                 <button
@@ -228,10 +232,10 @@ function CreateUserModal({ open, onClose, onCreated, projects }) {
 
         <div className="flex justify-end gap-3">
           <button type="button" onClick={onClose} className="btn-ghost">
-            Отмена
+            {t('common.cancel')}
           </button>
           <button type="submit" disabled={busy || !email.trim() || !password} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : 'Создать'}
+            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('common.create')}
           </button>
         </div>
       </form>

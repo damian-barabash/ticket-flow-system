@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { isDisplayableImage, formatLabel } from '../lib/files'
+import { useT } from '../context/LangContext'
 
 // Thumbnail for an attachment. Renders the image when the browser can display
 // it; otherwise (TIFF/HEIC, or a load error) shows a neutral tile with the
@@ -24,10 +25,11 @@ export function Thumb({ att, className = '' }) {
 
 // Neutral placeholder tile: dot-grid background + format label.
 export function FileFallback({ att }) {
+  const { t } = useT()
   return (
     <div className="dotgrid flex h-full w-full flex-col items-center justify-center gap-1 bg-surface2/40 text-center">
       <span className="font-mono uppercase tracking-label text-[10px] text-muted">{formatLabel(att)}</span>
-      <span className="label-sm text-faint">файл</span>
+      <span className="label-sm text-faint">{t('file.tile')}</span>
     </div>
   )
 }

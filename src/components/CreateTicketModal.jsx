@@ -3,11 +3,13 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { notify } from '../lib/notify'
 import { Modal, Spinner } from './ui'
-import { CATEGORY, CATEGORY_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
+import { useT } from '../context/LangContext'
+import { CATEGORY_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
 import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
   const { user } = useAuth()
+  const { t } = useT()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('change')
@@ -86,50 +88,50 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
       reset()
       onClose()
     } catch (err) {
-      setError(err.message || 'Ошибка создания тикета')
+      setError(err.message || t('createTicket.error'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Новый тикет" width="max-w-xl">
+    <Modal open={open} onClose={onClose} title={t('createTicket.title')} width="max-w-xl">
       <form onSubmit={onSubmit} onPaste={onPaste}>
-        <label className="label mb-2 block">Что нужно сделать</label>
+        <label className="label mb-2 block">{t('createTicket.what')}</label>
         <input
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Коротко — заголовок тикета"
+          placeholder={t('createTicket.whatPlaceholder')}
           className="field mb-5"
         />
 
-        <label className="label mb-2 block">Описание</label>
+        <label className="label mb-2 block">{t('createTicket.description')}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={4}
-          placeholder="Подробности, что и где поправить"
+          placeholder={t('createTicket.descriptionPlaceholder')}
           className="field resize-none mb-5"
         />
 
         <div className="mb-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <label className="label mb-2 block">Тип</label>
+            <label className="label mb-2 block">{t('createTicket.type')}</label>
             <div className="flex flex-wrap gap-2">
               {CATEGORY_ORDER.map((k) => (
                 <Chip key={k} active={category === k} onClick={() => setCategory(k)}>
-                  {CATEGORY[k].ru}
+                  {t('enum.category.' + k)}
                 </Chip>
               ))}
             </div>
           </div>
           <div>
-            <label className="label mb-2 block">Приоритет</label>
+            <label className="label mb-2 block">{t('createTicket.priority')}</label>
             <div className="flex flex-wrap gap-2">
               {PRIORITY_ORDER.map((k) => (
                 <Chip key={k} active={priority === k} onClick={() => setPriority(k)} color={PRIORITY[k].text}>
-                  {PRIORITY[k].ru}
+                  {t('enum.priority.' + k)}
                 </Chip>
               ))}
             </div>
@@ -137,7 +139,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
         </div>
 
         {/* photos */}
-        <label className="label mb-2 block">Фото</label>
+        <label className="label mb-2 block">{t('createTicket.photo')}</label>
         <div
           onClick={() => fileRef.current?.click()}
           onDragOver={(e) => {
@@ -154,7 +156,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
             drag ? 'border-accent bg-accentSoft' : 'border-line2 hover:border-line2'
           }`}
         >
-          <span className="label">Перетащите, вставьте (Ctrl+V) или нажмите</span>
+          <span className="label">{t('createTicket.dropzone')}</span>
         </div>
         <input
           ref={fileRef}
@@ -187,10 +189,10 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
 
         <div className="mt-5 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="btn-ghost">
-            Отмена
+            {t('common.cancel')}
           </button>
           <button type="submit" disabled={busy || !title.trim()} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : 'Создать тикет'}
+            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('createTicket.submit')}
           </button>
         </div>
       </form>

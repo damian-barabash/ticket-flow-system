@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
     }
     const { data } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role, avatar_url')
+      .select('id, email, full_name, role, avatar_url, language')
       .eq('id', userId)
       .single()
     setProfile(data ?? null)

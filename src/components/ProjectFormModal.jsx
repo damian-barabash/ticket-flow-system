@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { Modal, Spinner } from './ui'
 
 // Create or edit a project (admin only). Handles optional cover upload.
 export function ProjectFormModal({ open, onClose, onSaved, project }) {
   const { user } = useAuth()
+  const { t } = useT()
   const editing = !!project
   const [name, setName] = useState(project?.name ?? '')
   const [description, setDescription] = useState(project?.description ?? '')
@@ -73,14 +75,14 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
       onSaved?.(row)
       onClose()
     } catch (err) {
-      setError(err.message || 'Ошибка сохранения')
+      setError(err.message || t('projectForm.error'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editing ? 'Редактировать проект' : 'Новый проект'}>
+    <Modal open={open} onClose={onClose} title={editing ? t('projectForm.editTitle') : t('projectForm.newTitle')}>
       <form onSubmit={onSubmit}>
         {/* cover */}
         <button
@@ -91,7 +93,7 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
           {coverPreview ? (
             <img src={coverPreview} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span className="label">Загрузить обложку</span>
+            <span className="label">{t('projectForm.uploadCover')}</span>
           )}
         </button>
         <input
@@ -102,21 +104,21 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
           onChange={(e) => pickFile(e.target.files?.[0])}
         />
 
-        <label className="label mb-2 block">Название</label>
+        <label className="label mb-2 block">{t('projectForm.name')}</label>
         <input
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Например: Сайт компании"
+          placeholder={t('projectForm.namePlaceholder')}
           className="field mb-6"
         />
 
-        <label className="label mb-2 block">Описание</label>
+        <label className="label mb-2 block">{t('projectForm.description')}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          placeholder="Коротко о проекте"
+          placeholder={t('projectForm.descriptionPlaceholder')}
           className="field resize-none mb-6"
         />
 
@@ -126,10 +128,10 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
 
         <div className="flex justify-end gap-3">
           <button type="button" onClick={onClose} className="btn-ghost">
-            Отмена
+            {t('common.cancel')}
           </button>
           <button type="submit" disabled={busy || !name.trim()} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : editing ? 'Сохранить' : 'Создать'}
+            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : editing ? t('common.save') : t('common.create')}
           </button>
         </div>
       </form>

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { formatSize } from '../lib/format'
 import { Modal, Spinner } from './ui'
 
@@ -11,6 +12,7 @@ const baseName = (n) => n.replace(/\.[^.]+$/, '')
 // Each item carries an optional title + version. (Admin only.)
 export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 'file' }) {
   const { user } = useAuth()
+  const { t } = useT()
   const [fileItems, setFileItems] = useState([])
   const [linkItems, setLinkItems] = useState(initial === 'link' ? [emptyLink()] : [])
   const [busy, setBusy] = useState(false)
@@ -83,25 +85,25 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
       onSaved?.()
       onClose()
     } catch (err) {
-      setError(err.message || 'Ошибка сохранения')
+      setError(err.message || t('releaseForm.error'))
     } finally {
       setBusy(false)
     }
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Добавить версию">
+    <Modal open={open} onClose={onClose} title={t('releaseForm.title')}>
       <form onSubmit={onSubmit}>
         {/* files */}
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between">
-            <span className="label">Файлы</span>
+            <span className="label">{t('releaseForm.files')}</span>
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
               className="label text-muted transition-colors hover:text-ink"
             >
-              ＋ выбрать
+              {t('releaseForm.pickFiles')}
             </button>
             <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
           </div>
@@ -111,7 +113,7 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
               onClick={() => fileRef.current?.click()}
               className="brackets flex w-full items-center justify-center border border-line bg-surface2 px-4 py-5 text-xs text-faint transition-colors hover:border-line2"
             >
-              Перетащите или выберите файлы (zip, apk, pdf — любые)
+              {t('releaseForm.filesDropzone')}
             </button>
           ) : (
             <div className="space-y-2">
@@ -125,7 +127,7 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                       type="button"
                       onClick={() => removeFile(i)}
                       className="shrink-0 text-faint hover:text-accent"
-                      aria-label="Убрать файл"
+                      aria-label={t('releaseForm.removeFile')}
                     >
                       ✕
                     </button>
@@ -134,13 +136,13 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                     <input
                       value={it.title}
                       onChange={(e) => setFileField(i, 'title', e.target.value)}
-                      placeholder="Название"
+                      placeholder={t('common.titleField')}
                       className="field flex-1 py-1.5 text-sm"
                     />
                     <input
                       value={it.version}
                       onChange={(e) => setFileField(i, 'version', e.target.value)}
-                      placeholder="Версия"
+                      placeholder={t('common.version')}
                       className="field w-24 py-1.5 text-sm"
                     />
                   </div>
@@ -153,9 +155,9 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
         {/* links */}
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between">
-            <span className="label">Ссылки</span>
+            <span className="label">{t('releaseForm.links')}</span>
             <button type="button" onClick={emptyLinkRow} className="label text-muted transition-colors hover:text-ink">
-              ＋ ссылка
+              {t('releaseForm.addLink')}
             </button>
           </div>
           {linkItems.length > 0 && (
@@ -173,7 +175,7 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                       type="button"
                       onClick={() => removeLink(i)}
                       className="shrink-0 text-faint hover:text-accent"
-                      aria-label="Убрать ссылку"
+                      aria-label={t('releaseForm.removeLink')}
                     >
                       ✕
                     </button>
@@ -182,13 +184,13 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                     <input
                       value={l.title}
                       onChange={(e) => setLinkField(i, 'title', e.target.value)}
-                      placeholder="Название"
+                      placeholder={t('common.titleField')}
                       className="field flex-1 py-1.5 text-sm"
                     />
                     <input
                       value={l.version}
                       onChange={(e) => setLinkField(i, 'version', e.target.value)}
-                      placeholder="Версия"
+                      placeholder={t('common.version')}
                       className="field w-24 py-1.5 text-sm"
                     />
                   </div>
@@ -204,10 +206,10 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
 
         <div className="flex justify-end gap-3">
           <button type="button" onClick={onClose} className="btn-ghost">
-            Отмена
+            {t('common.cancel')}
           </button>
           <button type="submit" disabled={busy || !canSave} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : 'Добавить'}
+            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('common.add')}
           </button>
         </div>
       </form>

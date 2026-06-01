@@ -72,5 +72,5 @@ export function formatLabel(meta) {
   if (ext) return ext.toUpperCase()
   const type = meta?.content_type || meta?.type
   if (type && type.includes('/')) return type.split('/')[1].split('+')[0].toUpperCase()
-  return 'ФАЙЛ'
+  return 'FILE'
 }

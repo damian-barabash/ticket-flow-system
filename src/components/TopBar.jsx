@@ -1,10 +1,13 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { Wordmark } from './Logo'
 import { Avatar } from './ui'
+import { LangSwitch } from './LangSwitch'
 
 export function TopBar() {
   const { profile, isAdmin, signOut } = useAuth()
+  const { t } = useT()
   const navigate = useNavigate()
 
   return (
@@ -17,7 +20,7 @@ export function TopBar() {
         <div className="flex items-center gap-5">
           <span className="hidden items-center gap-2 sm:flex">
             <span className="inline-block h-1.5 w-1.5 bg-ok" />
-            <span className="label">{isAdmin ? 'Администратор' : 'Клиент'}</span>
+            <span className="label">{isAdmin ? t('topbar.admin') : t('topbar.client')}</span>
           </span>
           {isAdmin && (
             <button
@@ -25,15 +28,16 @@ export function TopBar() {
               data-tour="users"
               className="label hover:text-ink transition-colors"
             >
-              Пользователи
+              {t('topbar.users')}
             </button>
           )}
+          <LangSwitch />
           <div className="flex items-center gap-2.5">
             <Avatar name={profile?.full_name} email={profile?.email} />
             <span className="hidden text-xs text-muted md:inline">{profile?.email}</span>
           </div>
           <button onClick={signOut} className="label hover:text-accent transition-colors">
-            Выход
+            {t('topbar.signout')}
           </button>
         </div>
       </div>

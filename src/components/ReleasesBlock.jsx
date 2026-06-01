@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { formatSize, timeAgo } from '../lib/format'
 import { Spinner } from './ui'
 import { ReleaseFormModal } from './ReleaseFormModal'
@@ -9,6 +10,7 @@ import { ReleaseFormModal } from './ReleaseFormModal'
 // they already downloaded/opened an item; the admin additionally sees who did.
 export function ReleasesBlock({ projectId }) {
   const { user, isAdmin } = useAuth()
+  const { t } = useT()
   const [releases, setReleases] = useState([])
   const [myReads, setMyReads] = useState({}) // release_id -> accessed_at (current user)
   const [allReads, setAllReads] = useState({}) // admin: release_id -> [{ user_id, accessed_at }]
@@ -98,7 +100,7 @@ export function ReleasesBlock({ projectId }) {
       }
       await markAccessed(rel)
     } catch (err) {
-      alert('Не удалось открыть: ' + (err.message || err))
+      alert(t('releases.errOpen') + (err.message || err))
     } finally {
       setBusyId(null)
     }
@@ -106,7 +108,7 @@ export function ReleasesBlock({ projectId }) {
 
   async function remove(rel) {
     if (!isAdmin) return
-    if (!confirm(`Удалить «${rel.title}»?`)) return
+    if (!confirm(t('releases.confirmDelete', { title: rel.title }))) return
     setBusyId(rel.id)
     try {
       if (rel.kind === 'file' && rel.path) await supabase.storage.from('project-files').remove([rel.path])
@@ -114,7 +116,7 @@ export function ReleasesBlock({ projectId }) {
       if (error) throw error
       load()
     } catch (err) {
-      alert('Не удалось удалить: ' + (err.message || err))
+      alert(t('releases.errDelete') + (err.message || err))
     } finally {
       setBusyId(null)
     }
@@ -131,14 +133,14 @@ export function ReleasesBlock({ projectId }) {
   return (
     <section className="mb-6 border border-line bg-surface" data-tour="releases">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
-        <span className="label">Версии проекта</span>
+        <span className="label">{t('releases.heading')}</span>
         {isAdmin && (
           <div className="flex gap-2">
             <button onClick={() => openAdd('file')} className="label text-muted transition-colors hover:text-ink">
-              ＋ файл
+              {t('releases.addFile')}
             </button>
             <button onClick={() => openAdd('link')} className="label text-muted transition-colors hover:text-ink">
-              ＋ ссылка
+              {t('releases.addLink')}
             </button>
           </div>
         )}
@@ -150,7 +152,7 @@ export function ReleasesBlock({ projectId }) {
         </div>
       ) : releases.length === 0 ? (
         <p className="px-4 py-6 text-center text-xs text-faint">
-          Пока нет файлов и ссылок. Добавьте сборку или ссылку на демо для клиента.
+          {t('releases.empty')}
         </p>
       ) : (
         <ul className="divide-y divide-line">
@@ -172,18 +174,18 @@ export function ReleasesBlock({ projectId }) {
                       )}
                     </div>
                     <div className="mt-0.5 truncate font-mono text-[10px] text-faint">
-                      {isFile ? `${rel.name || 'файл'}${rel.size != null ? ' · ' + formatSize(rel.size) : ''}` : prettyUrl(rel.url)}
+                      {isFile ? `${rel.name || t('common.file')}${rel.size != null ? ' · ' + formatSize(rel.size) : ''}` : prettyUrl(rel.url)}
                     </div>
                   </div>
 
                   {/* per-user read badge */}
                   {read ? (
                     <span className="hidden shrink-0 font-mono text-[10px] text-ok sm:inline">
-                      ✓ {isFile ? 'скачано' : 'открыто'}
+                      {isFile ? t('releases.downloaded') : t('releases.opened')}
                     </span>
                   ) : (
                     <span className="hidden shrink-0 items-center gap-1 font-mono text-[10px] text-accent sm:inline-flex">
-                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" /> новое
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" /> {t('releases.fresh')}
                     </span>
                   )}
 
@@ -192,7 +194,7 @@ export function ReleasesBlock({ projectId }) {
                     disabled={busyId === rel.id}
                     className="btn-ghost shrink-0 px-3 py-1.5 text-[10px]"
                   >
-                    {busyId === rel.id ? <Spinner className="h-3 w-3" /> : isFile ? 'Скачать' : 'Открыть'}
+                    {busyId === rel.id ? <Spinner className="h-3 w-3" /> : isFile ? t('releases.download') : t('releases.open')}
                   </button>
 
                   {isAdmin && (
@@ -200,8 +202,8 @@ export function ReleasesBlock({ projectId }) {
                       onClick={() => remove(rel)}
                       disabled={busyId === rel.id}
                       className="shrink-0 px-1 text-faint transition-colors hover:text-accent"
-                      title="Удалить"
-                      aria-label="Удалить"
+                      title={t('common.delete')}
+                      aria-label={t('common.delete')}
                     >
                       ✕
                     </button>
@@ -215,7 +217,7 @@ export function ReleasesBlock({ projectId }) {
                       onClick={() => setExpanded((e) => (e === rel.id ? null : rel.id))}
                       className="font-mono text-[10px] text-faint transition-colors hover:text-muted"
                     >
-                      {isFile ? 'скачали' : 'открыли'}: {downloaders.length} из {memberCount}
+                      {isFile ? t('releases.statDownloaded') : t('releases.statOpened')}: {t('releases.statCount', { a: downloaders.length, b: memberCount })}
                       {downloaders.length > 0 && <span className="ml-1">{expanded === rel.id ? '▲' : '▾'}</span>}
                     </button>
                     {expanded === rel.id && downloaders.length > 0 && (

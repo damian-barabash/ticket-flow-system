@@ -1,10 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 
 // Lightweight spotlight tour. Runs once per (storageKey + user).
 // steps: [{ target?: cssSelector, title, text }]  — centered card if no target.
 export function Tour({ steps, storageKey, enabled = true }) {
   const { user } = useAuth()
+  const { t } = useT()
   const key = `tf_tour_${storageKey}_${user?.id || 'anon'}`
   const [step, setStep] = useState(0)
   const [rect, setRect] = useState(null)
@@ -102,10 +104,10 @@ export function Tour({ steps, storageKey, enabled = true }) {
       >
         <div className="mb-2 flex items-center justify-between">
           <span className="label">
-            Шаг {step + 1} / {steps.length}
+            {t('tour.step', { n: step + 1, total: steps.length })}
           </span>
           <button onClick={finish} className="label hover:text-ink">
-            Пропустить
+            {t('tour.skip')}
           </button>
         </div>
         <h3 className="mb-1.5 text-base font-semibold text-ink">{current.title}</h3>
@@ -113,11 +115,11 @@ export function Tour({ steps, storageKey, enabled = true }) {
         <div className="flex justify-end gap-2">
           {step > 0 && (
             <button onClick={() => setStep((s) => s - 1)} className="btn-ghost">
-              Назад
+              {t('common.back')}
             </button>
           )}
           <button onClick={next} className="btn-solid">
-            {step >= steps.length - 1 ? 'Понятно' : 'Далее'}
+            {step >= steps.length - 1 ? t('tour.done') : t('tour.next')}
           </button>
         </div>
       </div>

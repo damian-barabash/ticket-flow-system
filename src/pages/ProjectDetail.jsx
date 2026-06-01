@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
 import { Spinner, EmptyState } from '../components/ui'
 import { TicketCard } from '../components/TicketCard'
@@ -14,21 +15,22 @@ import { isDisplayableImage } from '../lib/files'
 import { Tour } from '../components/Tour'
 import { STATUS, STATUS_ORDER, PRIORITY_ORDER } from '../lib/constants'
 
-const SORTS = [
-  { key: 'recent', ru: 'Свежие' },
-  { key: 'priority', ru: 'Приоритет' },
-]
-
-// Done tickets live in their own tab, so the active board's status filter omits "done".
-const FILTERS = [
-  { key: 'all', ru: 'Все' },
-  ...STATUS_ORDER.filter((k) => k !== 'done').map((k) => ({ key: k, ru: STATUS[k].ru, dot: STATUS[k].dot })),
-]
-
 export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
+  const { t } = useT()
+
+  const SORTS = [
+    { key: 'recent', label: t('project.sortRecent') },
+    { key: 'priority', label: t('project.sortPriority') },
+  ]
+
+  // Done tickets live in their own tab, so the active board's status filter omits "done".
+  const FILTERS = [
+    { key: 'all', label: t('project.filterAll') },
+    ...STATUS_ORDER.filter((k) => k !== 'done').map((k) => ({ key: k, label: t('enum.status.' + k), dot: STATUS[k].dot })),
+  ]
 
   const [project, setProject] = useState(null)
   const [tickets, setTickets] = useState([])
@@ -160,7 +162,7 @@ export default function ProjectDetail() {
 
       <main className="mx-auto max-w-[1100px] px-4 py-6 sm:px-6 sm:py-8">
         <button onClick={() => navigate('/projects')} className="label mb-5 hover:text-ink transition-colors">
-          ← К проектам
+          {t('common.toProjects')}
         </button>
 
         {loading ? (
@@ -168,7 +170,7 @@ export default function ProjectDetail() {
             <Spinner className="h-6 w-6" />
           </div>
         ) : !project ? (
-          <EmptyState title="Проект не найден" />
+          <EmptyState title={t('project.notFound')} />
         ) : (
           <>
             {/* header */}
@@ -180,7 +182,7 @@ export default function ProjectDetail() {
                   </div>
                 )}
                 <div>
-                  <span className="label">Проект · MMXXVI</span>
+                  <span className="label">{t('project.label')} · MMXXVI</span>
                   <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{project.name}</h1>
                   {project.description && <p className="mt-1 max-w-lg text-sm text-faint">{project.description}</p>}
                 </div>
@@ -189,15 +191,15 @@ export default function ProjectDetail() {
                 {isAdmin && (
                   <>
                     <button onClick={() => setShowMembers(true)} className="btn-ghost" data-tour="members">
-                      Участники
+                      {t('project.members')}
                     </button>
                     <button onClick={() => setShowEdit(true)} className="btn-ghost">
-                      Изменить
+                      {t('project.edit')}
                     </button>
                   </>
                 )}
                 <button onClick={() => setShowCreate(true)} className="btn-solid" data-tour="new-ticket">
-                  + Новый тикет
+                  {t('project.newTicket')}
                 </button>
               </div>
             </div>
@@ -210,7 +212,7 @@ export default function ProjectDetail() {
               {STATUS_ORDER.map((k) => (
                 <span key={k} className="flex items-center gap-1.5 border border-line px-3 py-1.5">
                   <span className="inline-block h-1.5 w-1.5" style={{ background: STATUS[k].dot }} />
-                  <span className="label-sm">{STATUS[k].ru}</span>
+                  <span className="label-sm">{t('enum.status.' + k)}</span>
                   <span className="font-mono text-[11px] text-ink">{stat[k] || 0}</span>
                 </span>
               ))}
@@ -219,24 +221,24 @@ export default function ProjectDetail() {
             {/* active / done tabs */}
             <div className="mb-5 flex gap-6 border-b border-line">
               {[
-                { key: 'active', ru: 'Активные', n: tabCounts.active },
-                { key: 'done', ru: 'Выполненные', n: tabCounts.done },
-              ].map((t) => (
+                { key: 'active', label: t('project.tabActive'), n: tabCounts.active },
+                { key: 'done', label: t('project.tabDone'), n: tabCounts.done },
+              ].map((tabItem) => (
                 <button
-                  key={t.key}
+                  key={tabItem.key}
                   onClick={() => {
-                    setTab(t.key)
+                    setTab(tabItem.key)
                     setFilter('all')
                   }}
                   className={`-mb-px flex items-center gap-2 border-b-2 pb-2.5 font-mono uppercase tracking-label text-[11px] transition-colors ${
-                    tab === t.key ? 'border-accent text-ink' : 'border-transparent text-faint hover:text-muted'
+                    tab === tabItem.key ? 'border-accent text-ink' : 'border-transparent text-faint hover:text-muted'
                   }`}
                 >
-                  {t.ru}
+                  {tabItem.label}
                   <span
-                    className={`font-mono text-[10px] ${tab === t.key ? 'text-accent' : 'text-faint'}`}
+                    className={`font-mono text-[10px] ${tab === tabItem.key ? 'text-accent' : 'text-faint'}`}
                   >
-                    {t.n}
+                    {tabItem.n}
                   </span>
                 </button>
               ))}
@@ -255,7 +257,7 @@ export default function ProjectDetail() {
                       }`}
                     >
                       {f.dot && <span className="inline-block h-1.5 w-1.5" style={{ background: f.dot }} />}
-                      {f.ru}
+                      {f.label}
                     </button>
                   ))}
                 </div>
@@ -263,7 +265,7 @@ export default function ProjectDetail() {
                 <div />
               )}
               <div className="flex items-center gap-2 sm:ml-auto">
-                <span className="label hidden sm:inline">Сорт.</span>
+                <span className="label hidden sm:inline">{t('project.sort')}</span>
                 <div className="flex gap-1.5">
                   {SORTS.map((s) => (
                     <button
@@ -273,14 +275,14 @@ export default function ProjectDetail() {
                         sort === s.key ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
                       }`}
                     >
-                      {s.ru}
+                      {s.label}
                     </button>
                   ))}
                 </div>
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Поиск…"
+                  placeholder={t('common.search')}
                   className="field w-full sm:w-44"
                 />
               </div>
@@ -291,22 +293,22 @@ export default function ProjectDetail() {
               <EmptyState
                 title={
                   tab === 'done'
-                    ? 'Нет выполненных тикетов'
+                    ? t('project.emptyDoneTitle')
                     : tickets.length === 0
-                    ? 'Пока нет тикетов'
-                    : 'Ничего не найдено'
+                    ? t('project.emptyNoneTitle')
+                    : t('project.emptySearchTitle')
                 }
                 hint={
                   tab === 'done'
-                    ? 'Сюда попадают тикеты со статусом «Выполнен».'
+                    ? t('project.emptyDoneHint')
                     : tickets.length === 0
-                    ? 'Создайте первый тикет — опишите, что нужно поправить или добавить.'
-                    : 'Измените фильтр или запрос.'
+                    ? t('project.emptyNoneHint')
+                    : t('project.emptySearchHint')
                 }
               >
                 {tab === 'active' && tickets.length === 0 && (
                   <button onClick={() => setShowCreate(true)} className="btn-ghost">
-                    + Новый тикет
+                    {t('project.newTicket')}
                   </button>
                 )}
               </EmptyState>
@@ -360,8 +362,8 @@ export default function ProjectDetail() {
           steps={[
             {
               target: '[data-tour="new-ticket"]',
-              title: 'Создайте тикет',
-              text: 'Жми сюда, опиши что нужно поправить или добавить, прикрепи фото — и я займусь.',
+              title: t('tour.boardTitle'),
+              text: t('tour.boardText'),
             },
           ]}
         />

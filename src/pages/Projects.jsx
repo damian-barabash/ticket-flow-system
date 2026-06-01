@@ -2,12 +2,14 @@ import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { Spinner, EmptyState } from '../components/ui'
 import { Tour } from '../components/Tour'
 
 function ProjectCard({ project, index, counts, onOpen, tour }) {
+  const { t } = useT()
   const open = counts?.open ?? 0
   const done = counts?.done ?? 0
   return (
@@ -39,11 +41,11 @@ function ProjectCard({ project, index, counts, onOpen, tour }) {
         <div className="mt-4 flex items-center gap-4 border-t border-line pt-3">
           <span className="flex items-center gap-1.5 label">
             <span className="inline-block h-1.5 w-1.5 bg-accent" />
-            {open} открыто
+            {t('projects.open', { n: open })}
           </span>
           <span className="flex items-center gap-1.5 label">
             <span className="inline-block h-1.5 w-1.5 bg-ok" />
-            {done} готово
+            {t('projects.done', { n: done })}
           </span>
         </div>
       </div>
@@ -53,6 +55,7 @@ function ProjectCard({ project, index, counts, onOpen, tour }) {
 
 export default function Projects() {
   const { isAdmin } = useAuth()
+  const { t } = useT()
   const navigate = useNavigate()
   const [projects, setProjects] = useState([])
   const [counts, setCounts] = useState({})
@@ -93,19 +96,17 @@ export default function Projects() {
       <main className="mx-auto max-w-[1320px] px-6 py-10">
         <div className="mb-9 flex items-end justify-between gap-4">
           <div>
-            <span className="label">Каталог · MMXXVI</span>
+            <span className="label">{t('projects.catalog')} · MMXXVI</span>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
-              Проекты
+              {t('projects.heading')}
             </h1>
             <p className="mt-1.5 text-sm text-faint">
-              {isAdmin
-                ? 'Управляйте проектами, клиентами и тикетами'
-                : 'Ваши проекты и тикеты по ним'}
+              {isAdmin ? t('projects.subAdmin') : t('projects.subClient')}
             </p>
           </div>
           {isAdmin && (
             <button onClick={() => setShowForm(true)} data-tour="new-project" className="btn-solid">
-              + Новый проект
+              {t('projects.newProject')}
             </button>
           )}
         </div>
@@ -116,16 +117,12 @@ export default function Projects() {
           </div>
         ) : projects.length === 0 ? (
           <EmptyState
-            title="Пока нет проектов"
-            hint={
-              isAdmin
-                ? 'Создайте первый проект, чтобы начать принимать тикеты.'
-                : 'Администратор ещё не добавил вас в проекты.'
-            }
+            title={t('projects.emptyTitle')}
+            hint={isAdmin ? t('projects.emptyAdmin') : t('projects.emptyClient')}
           >
             {isAdmin && (
               <button onClick={() => setShowForm(true)} className="btn-ghost">
-                + Новый проект
+                {t('projects.newProject')}
               </button>
             )}
           </EmptyState>
@@ -154,29 +151,29 @@ export default function Projects() {
             isAdmin
               ? [
                   {
-                    title: 'Добро пожаловать в Ticket Flow',
-                    text: 'Здесь вы ведёте проекты и тикеты клиентов. Пройдём за 20 секунд.',
+                    title: t('tour.projAdmin0Title'),
+                    text: t('tour.projAdmin0Text'),
                   },
                   {
                     target: '[data-tour="new-project"]',
-                    title: 'Создайте проект',
-                    text: 'Жми сюда, чтобы добавить проект и поставить ему обложку.',
+                    title: t('tour.projAdmin1Title'),
+                    text: t('tour.projAdmin1Text'),
                   },
                   {
                     target: '[data-tour="users"]',
-                    title: 'Добавьте клиентов',
-                    text: 'В разделе «Пользователи» заводите клиентов и привязывайте их к проектам.',
+                    title: t('tour.projAdmin2Title'),
+                    text: t('tour.projAdmin2Text'),
                   },
                 ]
               : [
                   {
-                    title: 'Добро пожаловать 👋',
-                    text: 'Здесь ваши проекты. Внутри проекта вы создаёте тикеты — что нужно поправить или добавить.',
+                    title: t('tour.projClient0Title'),
+                    text: t('tour.projClient0Text'),
                   },
                   projects.length > 0 && {
                     target: '[data-tour="project-card"]',
-                    title: 'Откройте проект',
-                    text: 'Жми сюда, чтобы зайти в проект и увидеть тикеты по нему.',
+                    title: t('tour.projClient1Title'),
+                    text: t('tour.projClient1Text'),
                   },
                 ].filter(Boolean)
           }

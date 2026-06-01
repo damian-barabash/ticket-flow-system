@@ -1,19 +1,22 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../context/LangContext'
 import { LogoMark } from '../components/Logo'
 import { Spinner } from '../components/ui'
-
-const AUTH_ERRORS = {
-  'Invalid login credentials': 'Неверный email или пароль',
-  'Email not confirmed': 'Email не подтверждён',
-}
+import { LangSwitch } from '../components/LangSwitch'
 
 export default function Login() {
   const { signIn } = useAuth()
+  const { t } = useT()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  const AUTH_ERRORS = {
+    'Invalid login credentials': t('login.errInvalid'),
+    'Email not confirmed': t('login.errUnconfirmed'),
+  }
 
   async function onSubmit(e) {
     e.preventDefault()
@@ -32,18 +35,18 @@ export default function Login() {
       {/* top micro-labels */}
       <div className="absolute inset-x-6 top-6 flex items-center justify-between">
         <span className="label">Ticket Flow — Studio · MMXXVI</span>
-        <span className="label hidden sm:inline">Система тикетов</span>
+        <LangSwitch />
       </div>
 
       <div className="w-full max-w-[380px]">
         <div className="mb-8 flex flex-col items-center text-center">
           <LogoMark size={52} />
           <h1 className="mt-5 font-mono uppercase tracking-label text-[15px] text-ink">Ticket Flow</h1>
-          <p className="mt-2 text-sm text-faint">Вход в панель управления</p>
+          <p className="mt-2 text-sm text-faint">{t('login.subtitle')}</p>
         </div>
 
         <form onSubmit={onSubmit} className="brackets relative border border-line bg-surface/60 px-7 py-8">
-          <label className="label mb-2 block">Email</label>
+          <label className="label mb-2 block">{t('common.email')}</label>
           <input
             type="email"
             autoComplete="username"
@@ -54,7 +57,7 @@ export default function Login() {
             className="field mb-6"
           />
 
-          <label className="label mb-2 block">Пароль</label>
+          <label className="label mb-2 block">{t('login.password')}</label>
           <input
             type="password"
             autoComplete="current-password"
@@ -72,7 +75,7 @@ export default function Login() {
           )}
 
           <button type="submit" disabled={busy} className="btn-solid w-full">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : 'Войти'}
+            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('login.submit')}
           </button>
         </form>
       </div>

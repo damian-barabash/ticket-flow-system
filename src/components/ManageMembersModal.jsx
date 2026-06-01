@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useT } from '../context/LangContext'
 import { Modal, Spinner, Avatar } from './ui'
 
 // Admin: link/unlink client users to a project.
 export function ManageMembersModal({ open, onClose, projectId }) {
+  const { t } = useT()
   const [users, setUsers] = useState([])
   const [memberIds, setMemberIds] = useState(new Set())
   const [loading, setLoading] = useState(true)
@@ -42,14 +44,14 @@ export function ManageMembersModal({ open, onClose, projectId }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Участники проекта">
+    <Modal open={open} onClose={onClose} title={t('members.title')}>
       {loading ? (
         <div className="flex justify-center py-10">
           <Spinner className="h-5 w-5" />
         </div>
       ) : users.length === 0 ? (
         <p className="py-6 text-center text-sm text-faint">
-          Нет клиентов. Создайте их в разделе «Пользователи».
+          {t('members.empty')}
         </p>
       ) : (
         <ul className="divide-y divide-line">
@@ -67,7 +69,7 @@ export function ManageMembersModal({ open, onClose, projectId }) {
                   disabled={busyId === u.id}
                   className={isMember ? 'btn-ghost' : 'btn-solid'}
                 >
-                  {busyId === u.id ? '…' : isMember ? 'Убрать' : 'Добавить'}
+                  {busyId === u.id ? '…' : isMember ? t('members.remove') : t('members.add')}
                 </button>
               </li>
             )

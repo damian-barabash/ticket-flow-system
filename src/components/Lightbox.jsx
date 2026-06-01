@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import { isDisplayableImage, formatLabel } from '../lib/files'
+import { useT } from '../context/LangContext'
 
 export function Lightbox({ images, index, onClose, onNav }) {
+  const { t } = useT()
   useEffect(() => {
     function onKey(e) {
       if (e.key === 'Escape') onClose()
@@ -22,7 +24,7 @@ export function Lightbox({ images, index, onClose, onNav }) {
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
       onClick={onClose}
     >
-      <button className="absolute right-4 top-4 text-2xl text-muted hover:text-ink" aria-label="Закрыть">
+      <button className="absolute right-4 top-4 text-2xl text-muted hover:text-ink" aria-label={t('common.close')}>
         ✕
       </button>
       {images.length > 1 && (
@@ -33,7 +35,7 @@ export function Lightbox({ images, index, onClose, onNav }) {
               e.stopPropagation()
               onNav(-1)
             }}
-            aria-label="Назад"
+            aria-label={t('common.back')}
           >
             ‹
           </button>
@@ -43,7 +45,7 @@ export function Lightbox({ images, index, onClose, onNav }) {
               e.stopPropagation()
               onNav(1)
             }}
-            aria-label="Вперёд"
+            aria-label={t('common.forward')}
           >
             ›
           </button>
@@ -62,10 +64,10 @@ export function Lightbox({ images, index, onClose, onNav }) {
           onClick={(e) => e.stopPropagation()}
         >
           <span className="font-mono uppercase tracking-label text-sm text-muted">{formatLabel(cur)}</span>
-          <p className="max-w-[60vw] break-all text-sm text-ink/90">{cur?.name || 'Файл'}</p>
-          <p className="label-sm text-faint">Этот формат не показывается в браузере</p>
+          <p className="max-w-[60vw] break-all text-sm text-ink/90">{cur?.name || t('file.fileName')}</p>
+          <p className="label-sm text-faint">{t('file.cantDisplay')}</p>
           <a href={src} target="_blank" rel="noreferrer" className="btn-solid">
-            Открыть файл
+            {t('file.openFile')}
           </a>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { LangProvider } from './context/LangContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Projects from './pages/Projects'
@@ -21,8 +22,9 @@ function LoginRoute() {
 export default function App() {
   return (
     <AuthProvider>
-      <HashRouter>
-        <Routes>
+      <LangProvider>
+        <HashRouter>
+          <Routes>
           <Route path="/login" element={<LoginRoute />} />
           <Route
             path="/projects"
@@ -49,8 +51,9 @@ export default function App() {
             }
           />
           <Route path="*" element={<Navigate to="/projects" replace />} />
-        </Routes>
-      </HashRouter>
+          </Routes>
+        </HashRouter>
+      </LangProvider>
     </AuthProvider>
   )
 }

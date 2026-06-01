@@ -1,12 +1,15 @@
-import { STATUS, PRIORITY, CATEGORY } from '../lib/constants'
+import { STATUS, PRIORITY } from '../lib/constants'
 import { timeAgo } from '../lib/format'
+import { useT } from '../context/LangContext'
 import { Avatar } from './ui'
 
 // A ticket rendered like a paper ticket: body + dashed perforation + stub.
 export function TicketCard({ ticket, unread, commentCount = 0, creator, photos = [], onOpen }) {
+  const { t } = useT()
   const s = STATUS[ticket.status] ?? STATUS.new
   const p = PRIORITY[ticket.priority] ?? PRIORITY.medium
-  const c = CATEGORY[ticket.category] ?? CATEGORY.change
+  const statusKey = STATUS[ticket.status] ? ticket.status : 'new'
+  const priorityKey = PRIORITY[ticket.priority] ? ticket.priority : 'medium'
 
   return (
     <button
@@ -22,11 +25,11 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
           <span className="font-mono text-[11px] text-faint">
             № {String(ticket.number).padStart(3, '0')}
           </span>
-          <span className="label-sm">{c.ru}</span>
+          <span className="label-sm">{t('enum.category.' + ticket.category)}</span>
           {unread && (
             <span className="ml-auto flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-              <span className="label-sm text-accent">ново</span>
+              <span className="label-sm text-accent">{t('ticket.cardNew')}</span>
             </span>
           )}
         </div>
@@ -83,10 +86,10 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
           style={{ color: s.text }}
         >
           <span className="inline-block h-1.5 w-1.5" style={{ background: s.dot }} />
-          {s.ru}
+          {t('enum.status.' + statusKey)}
         </span>
         <span className="font-mono uppercase tracking-label text-[9px]" style={{ color: p.text }}>
-          {p.ru}
+          {t('enum.priority.' + priorityKey)}
         </span>
       </div>
     </button>
