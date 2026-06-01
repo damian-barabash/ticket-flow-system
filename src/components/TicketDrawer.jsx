@@ -25,6 +25,10 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const [lb, setLb] = useState(null)
   const [uploadingPhotos, setUploadingPhotos] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [relVersions, setRelVersions] = useState([])
+  const [fixModal, setFixModal] = useState(false)
+  const [fixInput, setFixInput] = useState('')
+  const [savingFix, setSavingFix] = useState(false)
   const scrollRef = useRef(null)
   const fileRef = useRef(null)
   const addPhotoRef = useRef(null)
@@ -69,6 +73,17 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
       ;(ps ?? []).forEach((p) => (map[p.id] = p))
       setProfiles(map)
     }
+
+    // existing release versions of this project → datalist suggestions for "fixed in version"
+    if (t?.project_id) {
+      const { data: rels } = await supabase
+        .from('project_releases')
+        .select('version')
+        .eq('project_id', t.project_id)
+        .not('version', 'is', null)
+        .order('created_at', { ascending: false })
+      setRelVersions([...new Set((rels ?? []).map((r) => r.version).filter(Boolean))])
+    }
     setLoading(false)
   }, [ticketId])
 
@@ -90,10 +105,44 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
 
   async function setStatus(status) {
     if (!isAdmin || status === ticket.status) return
+    // marking done → ask which project version fixes it (optional)
+    if (status === 'done') {
+      setFixInput(ticket.fixed_version || '')
+      setFixModal(true)
+      return
+    }
     await supabase.from('tickets').update({ status }).eq('id', ticketId)
     await markRead()
     notify('status_changed', ticketId, { status })
     onChanged?.()
+  }
+
+  // confirm "done" with an optional fixed-in version; also used to edit the version later
+  async function confirmDone(e) {
+    e?.preventDefault()
+    setSavingFix(true)
+    const version = fixInput.trim() || null
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .update({ status: 'done', fixed_version: version })
+        .eq('id', ticketId)
+      if (error) throw error
+      setFixModal(false)
+      await markRead()
+      notify('status_changed', ticketId, { status: 'done', fixed_version: version })
+      onChanged?.()
+      load()
+    } catch (err) {
+      alert((err.message || err))
+    } finally {
+      setSavingFix(false)
+    }
+  }
+
+  function openVersionEditor() {
+    setFixInput(ticket.fixed_version || '')
+    setFixModal(true)
   }
 
   async function setPriority(priority) {
@@ -215,6 +264,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const lbImages = atts
 
   return (
+   <>
     <div className="fixed inset-0 z-[60] flex justify-end bg-black/60 backdrop-blur-sm" onMouseDown={onClose}>
       <aside
         className="flex h-full w-full max-w-[560px] flex-col border-l border-line bg-bg"
@@ -284,6 +334,31 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                   <StatusBadge status={ticket.status} />
                 )}
               </div>
+
+              {/* fixed-in version (shown once done) */}
+              {ticket.status === 'done' && (
+                <div className="mb-3">
+                  <span className="label mb-1.5 block">{t('ticket.fixedVersion')}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {ticket.fixed_version ? (
+                      <span
+                        className="inline-flex items-center gap-1.5 border px-2 py-1 font-mono text-[11px]"
+                        style={{ borderColor: 'rgba(63,185,80,0.4)', color: '#3FB950' }}
+                      >
+                        <span>✓</span>
+                        {ticket.fixed_version}
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[11px] text-faint">{t('ticket.noVersion')}</span>
+                    )}
+                    {isAdmin && (
+                      <button onClick={openVersionEditor} className="label text-muted transition-colors hover:text-ink">
+                        {t('ticket.editVersion')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* priority control */}
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -442,6 +517,56 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
         />
       )}
     </div>
+
+    {/* "fixed in version" prompt — sits above the drawer (z-70) */}
+    {fixModal && (
+      <div
+        className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/70 px-4 py-12 backdrop-blur-sm"
+        onMouseDown={() => !savingFix && setFixModal(false)}
+      >
+        <form
+          onSubmit={confirmDone}
+          onMouseDown={(e) => e.stopPropagation()}
+          className="brackets relative w-full max-w-sm border border-line bg-surface p-7"
+        >
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="font-mono uppercase tracking-label text-[12px] text-ink">{t('ticket.fixVersionTitle')}</h2>
+            <button
+              type="button"
+              onClick={() => setFixModal(false)}
+              className="font-mono text-faint transition-colors hover:text-ink"
+              aria-label={t('common.close')}
+            >
+              ✕
+            </button>
+          </div>
+          <p className="mb-4 text-sm text-faint">{t('ticket.fixVersionHint')}</p>
+          <label className="label mb-1.5 block">{t('common.version')}</label>
+          <input
+            list="fix-version-list"
+            autoFocus
+            value={fixInput}
+            onChange={(e) => setFixInput(e.target.value)}
+            placeholder={t('ticket.fixVersionPlaceholder')}
+            className="field w-full border border-line px-3 py-2.5"
+          />
+          <datalist id="fix-version-list">
+            {relVersions.map((v) => (
+              <option key={v} value={v} />
+            ))}
+          </datalist>
+          <div className="mt-6 flex justify-end gap-2">
+            <button type="button" onClick={() => setFixModal(false)} disabled={savingFix} className="btn-ghost px-4 py-2.5">
+              {t('common.cancel')}
+            </button>
+            <button type="submit" disabled={savingFix} className="btn-solid px-4 py-2.5">
+              {savingFix ? <Spinner className="border-bg/40 border-t-bg" /> : t('ticket.markDone')}
+            </button>
+          </div>
+        </form>
+      </div>
+    )}
+   </>
   )
 }
 

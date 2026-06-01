@@ -91,6 +91,15 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
         <span className="font-mono uppercase tracking-label text-[9px]" style={{ color: p.text }}>
           {t('enum.priority.' + priorityKey)}
         </span>
+        {ticket.status === 'done' && ticket.fixed_version && (
+          <span
+            className="max-w-full truncate font-mono text-[9px]"
+            style={{ color: '#3FB950' }}
+            title={ticket.fixed_version}
+          >
+            ✓ {ticket.fixed_version}
+          </span>
+        )}
       </div>
     </button>
   )
