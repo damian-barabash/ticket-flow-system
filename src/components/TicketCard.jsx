@@ -40,7 +40,15 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
           <div className="mt-3 flex gap-2">
             {photos.slice(0, 2).map((url, i) => (
               <div key={i} className="h-12 w-12 shrink-0 overflow-hidden border border-line sm:h-14 sm:w-14">
-                <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
+                <img
+                  src={url}
+                  alt=""
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.parentElement.style.display = 'none'
+                  }}
+                  className="h-full w-full object-cover"
+                />
               </div>
             ))}
           </div>

@@ -10,6 +10,7 @@ import { TicketDrawer } from '../components/TicketDrawer'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { ManageMembersModal } from '../components/ManageMembersModal'
 import { ReleasesBlock } from '../components/ReleasesBlock'
+import { isDisplayableImage } from '../lib/files'
 import { Tour } from '../components/Tour'
 import { STATUS, STATUS_ORDER, PRIORITY_ORDER } from '../lib/constants'
 
@@ -68,7 +69,7 @@ export default function ProjectDetail() {
           .select('id, full_name, email')
           .in('id', [...new Set(list.map((t) => t.created_by).filter(Boolean))]),
         // ticket-level photos for card previews
-        supabase.from('attachments').select('ticket_id, path').is('comment_id', null).in('ticket_id', ids).order('created_at'),
+        supabase.from('attachments').select('ticket_id, path, name, content_type').is('comment_id', null).in('ticket_id', ids).order('created_at'),
       ])
       const cc = {}
       ;(cm ?? []).forEach((c) => (cc[c.ticket_id] = (cc[c.ticket_id] || 0) + 1))
@@ -77,11 +78,12 @@ export default function ProjectDetail() {
       ;(profs ?? []).forEach((p) => (cr[p.id] = p))
       setCreators(cr)
 
-      // keep first 2 paths per ticket, batch-sign them (ticket-media is private)
+      // keep first 2 browser-renderable photos per ticket, batch-sign them (ticket-media is private)
       const firstTwo = {}
       ;(at ?? []).forEach((a) => {
+        if (!a.path || !isDisplayableImage(a)) return
         const arr = firstTwo[a.ticket_id] || (firstTwo[a.ticket_id] = [])
-        if (arr.length < 2 && a.path) arr.push(a.path)
+        if (arr.length < 2) arr.push(a.path)
       })
       const allPaths = Object.values(firstTwo).flat()
       const signed = {}

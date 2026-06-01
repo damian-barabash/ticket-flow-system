@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { isDisplayableImage, formatLabel } from '../lib/files'
 
 export function Lightbox({ images, index, onClose, onNav }) {
   useEffect(() => {
@@ -12,7 +13,9 @@ export function Lightbox({ images, index, onClose, onNav }) {
   }, [onClose, onNav])
 
   if (index == null || !images?.length) return null
-  const src = images[index]?.signed || images[index]?.url
+  const cur = images[index]
+  const src = cur?.signed || cur?.url
+  const displayable = isDisplayableImage(cur)
 
   return (
     <div
@@ -46,12 +49,26 @@ export function Lightbox({ images, index, onClose, onNav }) {
           </button>
         </>
       )}
-      <img
-        src={src}
-        alt=""
-        className="max-h-[88vh] max-w-[92vw] object-contain"
-        onClick={(e) => e.stopPropagation()}
-      />
+      {displayable ? (
+        <img
+          src={src}
+          alt={cur?.name || ''}
+          className="max-h-[88vh] max-w-[92vw] object-contain"
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <div
+          className="flex flex-col items-center gap-4 border border-line bg-surface px-8 py-10 text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="font-mono uppercase tracking-label text-sm text-muted">{formatLabel(cur)}</span>
+          <p className="max-w-[60vw] break-all text-sm text-ink/90">{cur?.name || 'Файл'}</p>
+          <p className="label-sm text-faint">Этот формат не показывается в браузере</p>
+          <a href={src} target="_blank" rel="noreferrer" className="btn-solid">
+            Открыть файл
+          </a>
+        </div>
+      )}
       <span className="absolute bottom-4 left-1/2 -translate-x-1/2 label">
         {index + 1} / {images.length}
       </span>

@@ -6,6 +6,8 @@ import { STATUS, STATUS_ORDER, PRIORITY, PRIORITY_ORDER, CATEGORY, ACTIVITY_RU }
 import { formatDate, timeAgo } from '../lib/format'
 import { Spinner, Avatar, StatusBadge } from './ui'
 import { Lightbox } from './Lightbox'
+import { Thumb } from './Thumb'
+import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const { user, isAdmin } = useAuth()
@@ -99,22 +101,22 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   }
 
   function addFiles(list) {
-    const imgs = Array.from(list || []).filter((f) => f.type.startsWith('image/'))
+    const imgs = Array.from(list || []).filter(isImageFile)
     if (imgs.length) setFiles((p) => [...p, ...imgs.map((f) => ({ file: f, url: URL.createObjectURL(f) }))])
   }
 
   // upload one image to ticket-media/<ticketId>/... and return its DB attachment payload
   async function uploadOne(file, commentId = null) {
-    const ext = file.name.split('.').pop() || 'png'
-    const path = `${ticketId}/${crypto.randomUUID()}.${ext}`
-    const { error: upErr } = await supabase.storage.from('ticket-media').upload(path, file, { contentType: file.type })
+    const path = `${ticketId}/${crypto.randomUUID()}.${imageExt(file)}`
+    const contentType = imageContentType(file)
+    const { error: upErr } = await supabase.storage.from('ticket-media').upload(path, file, { contentType })
     if (upErr) throw upErr
     const { error: aErr } = await supabase.from('attachments').insert({
       ticket_id: ticketId,
       comment_id: commentId,
       path,
       name: file.name,
-      content_type: file.type,
+      content_type: contentType,
       size: file.size,
       uploaded_by: user.id,
     })
@@ -123,7 +125,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
 
   // add ticket-level photos (no comment) directly to an existing ticket
   async function addTicketPhotos(list) {
-    const imgs = Array.from(list || []).filter((f) => f.type.startsWith('image/'))
+    const imgs = Array.from(list || []).filter(isImageFile)
     if (!imgs.length) return
     setUploadingPhotos(true)
     try {
@@ -407,7 +409,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                   value={body}
                   onChange={(e) => setBody(e.target.value)}
                   onPaste={(e) => {
-                    const imgs = Array.from(e.clipboardData?.items || []).filter((i) => i.type.startsWith('image/')).map((i) => i.getAsFile())
+                    const imgs = Array.from(e.clipboardData?.items || []).filter((i) => i.type.startsWith('image/')).map((i) => i.getAsFile()).filter(Boolean)
                     if (imgs.length) addFiles(imgs)
                   }}
                   onKeyDown={(e) => {
@@ -466,7 +468,7 @@ function TicketPhotos({ atts, onOpen, all, canDelete, onDelete }) {
       {atts.map((a) => (
         <div key={a.id} className="group relative aspect-square overflow-hidden border border-line">
           <button onClick={() => onOpen(all.findIndex((x) => x.id === a.id))} className="h-full w-full">
-            {a.signed ? <img src={a.signed} alt="" className="h-full w-full object-cover" /> : <div className="dotgrid h-full w-full" />}
+            <Thumb att={a} />
           </button>
           {canDelete?.(a) && <PhotoDeleteBtn att={a} onDelete={onDelete} />}
         </div>
@@ -496,7 +498,7 @@ function CommentRow({ comment, author, mine, atts, onOpenPhoto, canDelete, onDel
             {atts.map((a) => (
               <div key={a.id} className="group relative h-16 w-16 overflow-hidden border border-line">
                 <button onClick={() => onOpenPhoto(a)} className="h-full w-full">
-                  {a.signed ? <img src={a.signed} alt="" className="h-full w-full object-cover" /> : <div className="dotgrid h-full w-full" />}
+                  <Thumb att={a} />
                 </button>
                 {canDelete?.(a) && <PhotoDeleteBtn att={a} onDelete={onDelete} />}
               </div>

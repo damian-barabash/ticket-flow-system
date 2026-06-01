@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { notify } from '../lib/notify'
 import { Modal, Spinner } from './ui'
 import { CATEGORY, CATEGORY_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
+import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
   const { user } = useAuth()
@@ -27,7 +28,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
   }
 
   function addFiles(list) {
-    const imgs = Array.from(list || []).filter((f) => f.type.startsWith('image/'))
+    const imgs = Array.from(list || []).filter(isImageFile)
     if (imgs.length) setFiles((prev) => [...prev, ...imgs.map((f) => ({ file: f, url: URL.createObjectURL(f) }))])
   }
 
@@ -63,17 +64,17 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
 
       // upload photos to ticket-media/<ticketId>/...
       for (const { file } of files) {
-        const ext = file.name.split('.').pop() || 'png'
-        const path = `${ticket.id}/${crypto.randomUUID()}.${ext}`
+        const path = `${ticket.id}/${crypto.randomUUID()}.${imageExt(file)}`
+        const contentType = imageContentType(file)
         const { error: upErr } = await supabase.storage
           .from('ticket-media')
-          .upload(path, file, { contentType: file.type })
+          .upload(path, file, { contentType })
         if (upErr) throw upErr
         const { error: aErr } = await supabase.from('attachments').insert({
           ticket_id: ticket.id,
           path,
           name: file.name,
-          content_type: file.type,
+          content_type: contentType,
           size: file.size,
           uploaded_by: user.id,
         })
