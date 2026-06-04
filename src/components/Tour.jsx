@@ -30,7 +30,10 @@ export function Tour({ steps, storageKey, enabled = true }) {
         setRect(null)
         return
       }
-      const el = document.querySelector(current.target)
+      // Pick the visible match — responsive layouts can render the same
+      // data-tour target twice (e.g. desktop bar vs. mobile burger).
+      const els = document.querySelectorAll(current.target)
+      const el = Array.from(els).find((e) => e.offsetParent !== null) || els[0]
       if (!el) {
         setRect(null)
         return

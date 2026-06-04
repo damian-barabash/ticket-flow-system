@@ -58,7 +58,7 @@ const DICT = {
       errInvalid: 'Неверный email или пароль',
       errUnconfirmed: 'Email не подтверждён',
     },
-    topbar: { admin: 'Администратор', client: 'Клиент', users: 'Пользователи', signout: 'Выход', lang: 'Язык' },
+    topbar: { admin: 'Администратор', client: 'Клиент', users: 'Пользователи', signout: 'Выход', lang: 'Язык', menu: 'Меню' },
     projects: {
       catalog: 'Каталог',
       heading: 'Проекты',
@@ -275,7 +275,7 @@ const DICT = {
       errInvalid: 'Nieprawidłowy email lub hasło',
       errUnconfirmed: 'Email niepotwierdzony',
     },
-    topbar: { admin: 'Administrator', client: 'Klient', users: 'Użytkownicy', signout: 'Wyloguj', lang: 'Język' },
+    topbar: { admin: 'Administrator', client: 'Klient', users: 'Użytkownicy', signout: 'Wyloguj', lang: 'Język', menu: 'Menu' },
     projects: {
       catalog: 'Katalog',
       heading: 'Projekty',
@@ -492,7 +492,7 @@ const DICT = {
       errInvalid: 'Invalid email or password',
       errUnconfirmed: 'Email not confirmed',
     },
-    topbar: { admin: 'Administrator', client: 'Client', users: 'Users', signout: 'Sign out', lang: 'Language' },
+    topbar: { admin: 'Administrator', client: 'Client', users: 'Users', signout: 'Sign out', lang: 'Language', menu: 'Menu' },
     projects: {
       catalog: 'Catalog',
       heading: 'Projects',
