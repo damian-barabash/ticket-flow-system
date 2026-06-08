@@ -140,6 +140,8 @@ const DICT = {
       error: 'Ошибка создания тикета',
       taskToggle: 'Задание для клиента',
       taskHint: 'Тикет загорится красным и закрепится сверху у всех клиентов проекта.',
+      taskToggleSelf: 'Задание для себя',
+      taskHintSelf: 'Тикет загорится красным и закрепится сверху — как личное задание.',
     },
     releases: {
       heading: 'Версии проекта',
@@ -364,6 +366,8 @@ const DICT = {
       error: 'Błąd tworzenia zgłoszenia',
       taskToggle: 'Zadanie dla klienta',
       taskHint: 'Zgłoszenie zaświeci się na czerwono i przypnie na górze u wszystkich klientów projektu.',
+      taskToggleSelf: 'Zadanie dla siebie',
+      taskHintSelf: 'Zgłoszenie zaświeci się na czerwono i przypnie na górze — jako osobiste zadanie.',
     },
     releases: {
       heading: 'Wersje projektu',
@@ -588,6 +592,8 @@ const DICT = {
       error: 'Failed to create ticket',
       taskToggle: 'Task for the client',
       taskHint: 'The ticket turns red and is pinned to the top for all project clients.',
+      taskToggleSelf: 'Task for yourself',
+      taskHintSelf: 'The ticket turns red and is pinned to the top — as a personal task.',
     },
     releases: {
       heading: 'Project releases',

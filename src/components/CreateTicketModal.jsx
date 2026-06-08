@@ -57,7 +57,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           description: description.trim() || null,
           category,
           priority,
-          is_task: isAdmin ? isTask : false,
+          is_task: isTask,
           created_by: user.id,
         })
         .select()
@@ -141,30 +141,28 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           </div>
         </div>
 
-        {/* admin: turn this ticket into a task assigned to the project's clients */}
-        {isAdmin && (
-          <button
-            type="button"
-            onClick={() => setIsTask((v) => !v)}
-            className={`mb-5 flex w-full items-start gap-3 border px-4 py-3 text-left transition-colors ${
-              isTask ? 'border-accent bg-accentSoft' : 'border-line hover:border-line2'
+        {/* turn this ticket into a task: admin → assigned to project clients; client → personal task for self */}
+        <button
+          type="button"
+          onClick={() => setIsTask((v) => !v)}
+          className={`mb-5 flex w-full items-start gap-3 border px-4 py-3 text-left transition-colors ${
+            isTask ? 'border-accent bg-accentSoft' : 'border-line hover:border-line2'
+          }`}
+        >
+          <span
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border text-[10px] ${
+              isTask ? 'border-accent bg-accent text-bg' : 'border-line2 text-transparent'
             }`}
           >
-            <span
-              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border text-[10px] ${
-                isTask ? 'border-accent bg-accent text-bg' : 'border-line2 text-transparent'
-              }`}
-            >
-              ✓
+            ✓
+          </span>
+          <span className="min-w-0">
+            <span className={`block font-mono uppercase tracking-label text-[10px] ${isTask ? 'text-accent' : 'text-muted'}`}>
+              {t(isAdmin ? 'createTicket.taskToggle' : 'createTicket.taskToggleSelf')}
             </span>
-            <span className="min-w-0">
-              <span className={`block font-mono uppercase tracking-label text-[10px] ${isTask ? 'text-accent' : 'text-muted'}`}>
-                {t('createTicket.taskToggle')}
-              </span>
-              <span className="mt-1 block text-xs text-faint">{t('createTicket.taskHint')}</span>
-            </span>
-          </button>
-        )}
+            <span className="mt-1 block text-xs text-faint">{t(isAdmin ? 'createTicket.taskHint' : 'createTicket.taskHintSelf')}</span>
+          </span>
+        </button>
 
         {/* photos */}
         <label className="label mb-2 block">{t('createTicket.photo')}</label>
