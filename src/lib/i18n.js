@@ -233,6 +233,10 @@ const DICT = {
       cantDisplay: 'Этот формат не показывается в браузере',
       openFile: 'Открыть файл',
       fileName: 'Файл',
+      download: 'Скачать',
+      copy: 'Копировать',
+      copied: 'Скопировано',
+      copyFailed: 'Не удалось скопировать',
     },
     relTime: {
       now: 'только что',
@@ -459,6 +463,10 @@ const DICT = {
       cantDisplay: 'Ten format nie wyświetla się w przeglądarce',
       openFile: 'Otwórz plik',
       fileName: 'Plik',
+      download: 'Pobierz',
+      copy: 'Kopiuj',
+      copied: 'Skopiowano',
+      copyFailed: 'Nie udało się skopiować',
     },
     relTime: {
       now: 'przed chwilą',
@@ -685,6 +693,10 @@ const DICT = {
       cantDisplay: 'This format is not displayed in the browser',
       openFile: 'Open file',
       fileName: 'File',
+      download: 'Download',
+      copy: 'Copy',
+      copied: 'Copied',
+      copyFailed: 'Copy failed',
     },
     relTime: {
       now: 'just now',
