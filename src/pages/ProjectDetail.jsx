@@ -53,6 +53,7 @@ export default function ProjectDetail() {
   const [tab, setTab] = useState('active') // active | done
   const [filter, setFilter] = useState('all')
   const [sort, setSort] = useState('recent')
+  const [versionFilter, setVersionFilter] = useState('all') // done tab + version sort: pin to one fixed_version
   const [query, setQuery] = useState('')
   const [openTicket, setOpenTicket] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
@@ -146,6 +147,24 @@ export default function ProjectDetail() {
     return { done, active: tickets.length - done }
   }, [tickets])
 
+  // distinct fixed_version values among done tickets (newest first) → version-filter chips
+  const doneVersions = useMemo(() => {
+    const set = new Set()
+    let hasNone = false
+    tickets.forEach((t) => {
+      if (t.status !== 'done') return
+      if (t.fixed_version) set.add(t.fixed_version)
+      else hasNone = true
+    })
+    return { list: [...set].sort(cmpVersionDesc), hasNone }
+  }, [tickets])
+
+  // version filter only lives alongside the version sort on the Done tab; reset it otherwise
+  function changeSort(key) {
+    setSort(key)
+    if (key !== 'version') setVersionFilter('all')
+  }
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
     const rank = (p) => PRIORITY_ORDER.indexOf(p) // low=0 … urgent=3
@@ -154,6 +173,10 @@ export default function ProjectDetail() {
         // tab split: done tickets are tucked away in their own tab
         if (tab === 'done' ? t.status !== 'done' : t.status === 'done') return false
         if (tab === 'active' && filter !== 'all' && t.status !== filter) return false
+        // done tab, version sort: optionally pin to a single fixed_version
+        if (tab === 'done' && sort === 'version' && versionFilter !== 'all') {
+          if (versionFilter === '__none__' ? t.fixed_version : t.fixed_version !== versionFilter) return false
+        }
         if (q && !(`${t.title} ${t.description || ''}`.toLowerCase().includes(q) || String(t.number).includes(q)))
           return false
         return true
@@ -176,7 +199,7 @@ export default function ProjectDetail() {
         // tie-break / default: newest first
         return new Date(b.created_at) - new Date(a.created_at)
       })
-  }, [tickets, tab, filter, sort, query, isAdmin])
+  }, [tickets, tab, filter, sort, versionFilter, query, isAdmin])
 
   function isUnread(t) {
     const r = reads[t.id]
@@ -256,6 +279,7 @@ export default function ProjectDetail() {
                   onClick={() => {
                     setTab(tabItem.key)
                     setFilter('all')
+                    setVersionFilter('all')
                     if (tabItem.key !== 'done' && sort === 'version') setSort('recent')
                   }}
                   className={`-mb-px flex items-center gap-2 border-b-2 pb-2.5 font-mono uppercase tracking-label text-[11px] transition-colors ${
@@ -289,6 +313,25 @@ export default function ProjectDetail() {
                     </button>
                   ))}
                 </div>
+              ) : tab === 'done' && sort === 'version' && (doneVersions.list.length > 0 || doneVersions.hasNone) ? (
+                <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:pb-0">
+                  {[
+                    { key: 'all', label: t('project.filterAll') },
+                    ...doneVersions.list.map((v) => ({ key: v, label: v })),
+                    ...(doneVersions.hasNone ? [{ key: '__none__', label: t('ticket.noVersion') }] : []),
+                  ].map((vf) => (
+                    <button
+                      key={vf.key}
+                      onClick={() => setVersionFilter(vf.key)}
+                      className={`flex shrink-0 items-center gap-1.5 border px-3 py-1.5 font-mono uppercase tracking-label text-[10px] transition-colors ${
+                        versionFilter === vf.key ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
+                      }`}
+                    >
+                      {vf.key !== 'all' && vf.key !== '__none__' && <span className="text-[#3FB950]">✓</span>}
+                      {vf.label}
+                    </button>
+                  ))}
+                </div>
               ) : (
                 <div />
               )}
@@ -298,7 +341,7 @@ export default function ProjectDetail() {
                   {SORTS.map((s) => (
                     <button
                       key={s.key}
-                      onClick={() => setSort(s.key)}
+                      onClick={() => changeSort(s.key)}
                       className={`shrink-0 border px-3 py-1.5 font-mono uppercase tracking-label text-[10px] transition-colors ${
                         sort === s.key ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
                       }`}
