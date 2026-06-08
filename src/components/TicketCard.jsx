@@ -1,23 +1,33 @@
 import { STATUS, PRIORITY } from '../lib/constants'
 import { timeAgo } from '../lib/format'
 import { useT } from '../context/LangContext'
+import { useAuth } from '../context/AuthContext'
 import { Avatar } from './ui'
 
 // A ticket rendered like a paper ticket: body + dashed perforation + stub.
 export function TicketCard({ ticket, unread, commentCount = 0, creator, photos = [], onOpen }) {
   const { t } = useT()
+  const { isAdmin } = useAuth()
   const s = STATUS[ticket.status] ?? STATUS.new
   const p = PRIORITY[ticket.priority] ?? PRIORITY.medium
   const statusKey = STATUS[ticket.status] ? ticket.status : 'new'
   const priorityKey = PRIORITY[ticket.priority] ? ticket.priority : 'medium'
 
+  // Admin-assigned task: glows red + pinned for the client until done.
+  const isTask = !!ticket.is_task
+  const clientTask = isTask && !isAdmin && ticket.status !== 'done'
+
   return (
     <button
       onClick={onOpen}
-      className="group relative flex w-full overflow-hidden border border-line bg-surface text-left transition-colors hover:border-line2"
+      className={`group relative flex w-full overflow-hidden border bg-surface text-left transition-colors ${
+        clientTask
+          ? 'border-accent shadow-[0_0_0_1px_rgba(255,46,46,0.6),0_0_18px_-4px_rgba(255,46,46,0.55)] hover:border-accent'
+          : 'border-line hover:border-line2'
+      }`}
     >
-      {/* accent edge by status */}
-      <span className="w-[3px] shrink-0" style={{ background: s.dot }} />
+      {/* accent edge by status (task → red for the client) */}
+      <span className="w-[3px] shrink-0" style={{ background: clientTask ? '#FF2E2E' : s.dot }} />
 
       {/* body */}
       <div className="min-w-0 flex-1 p-4 sm:p-5">
@@ -26,6 +36,15 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
             № {String(ticket.number).padStart(3, '0')}
           </span>
           <span className="label-sm">{t('enum.category.' + ticket.category)}</span>
+          {isTask && (
+            <span
+              className={`flex items-center gap-1 px-1.5 py-0.5 font-mono uppercase tracking-label text-[9px] ${
+                clientTask ? 'bg-accent text-bg' : 'border border-accent/40 text-accent'
+              }`}
+            >
+              ★ {clientTask ? t('ticket.taskForYou') : t('ticket.taskForClient')}
+            </span>
+          )}
           {unread && (
             <span className="ml-auto flex items-center gap-1.5">
               <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />

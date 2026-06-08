@@ -8,12 +8,13 @@ import { CATEGORY_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
 import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
-  const { user } = useAuth()
+  const { user, isAdmin } = useAuth()
   const { t } = useT()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('change')
   const [priority, setPriority] = useState('medium')
+  const [isTask, setIsTask] = useState(false)
   const [files, setFiles] = useState([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -25,6 +26,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
     setDescription('')
     setCategory('change')
     setPriority('medium')
+    setIsTask(false)
     setFiles([])
     setError('')
   }
@@ -55,6 +57,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           description: description.trim() || null,
           category,
           priority,
+          is_task: isAdmin ? isTask : false,
           created_by: user.id,
         })
         .select()
@@ -137,6 +140,31 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
             </div>
           </div>
         </div>
+
+        {/* admin: turn this ticket into a task assigned to the project's clients */}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setIsTask((v) => !v)}
+            className={`mb-5 flex w-full items-start gap-3 border px-4 py-3 text-left transition-colors ${
+              isTask ? 'border-accent bg-accentSoft' : 'border-line hover:border-line2'
+            }`}
+          >
+            <span
+              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center border text-[10px] ${
+                isTask ? 'border-accent bg-accent text-bg' : 'border-line2 text-transparent'
+              }`}
+            >
+              ✓
+            </span>
+            <span className="min-w-0">
+              <span className={`block font-mono uppercase tracking-label text-[10px] ${isTask ? 'text-accent' : 'text-muted'}`}>
+                {t('createTicket.taskToggle')}
+              </span>
+              <span className="mt-1 block text-xs text-faint">{t('createTicket.taskHint')}</span>
+            </span>
+          </button>
+        )}
 
         {/* photos */}
         <label className="label mb-2 block">{t('createTicket.photo')}</label>

@@ -5,11 +5,13 @@
 export const STATUS = {
   new:         { dot: '#FF2E2E', text: '#FF6A6A' },
   in_progress: { dot: '#E3B341', text: '#E3B341' },
+  unclear:     { dot: '#C678DD', text: '#D29BE8' },
+  on_hold:     { dot: '#6E6EDA', text: '#9A9AE6' },
+  deferred:    { dot: '#46A6A0', text: '#5FC0BA' },
   done:        { dot: '#3FB950', text: '#3FB950' },
   rejected:    { dot: '#8A8A92', text: '#8A8A92' },
-  on_hold:     { dot: '#6E6EDA', text: '#9A9AE6' },
 }
-export const STATUS_ORDER = ['new', 'in_progress', 'on_hold', 'done', 'rejected']
+export const STATUS_ORDER = ['new', 'in_progress', 'unclear', 'on_hold', 'deferred', 'done', 'rejected']
 
 export const PRIORITY = {
   low:    { text: '#8A8A92' },

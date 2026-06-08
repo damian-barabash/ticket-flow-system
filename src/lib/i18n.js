@@ -20,7 +20,7 @@ export function normalizeLang(code) {
 const DICT = {
   ru: {
     enum: {
-      status: { new: 'Новый', in_progress: 'В работе', done: 'Выполнен', rejected: 'Отклонён', on_hold: 'На паузе' },
+      status: { new: 'Новый', in_progress: 'В работе', unclear: 'Непонятно', on_hold: 'На паузе', deferred: 'Отложено', done: 'Выполнен', rejected: 'Отклонён' },
       priority: { low: 'Низкий', medium: 'Средний', high: 'Высокий', urgent: 'Срочно' },
       category: { bug: 'Баг', change: 'Правка', feature: 'Новая фича', question: 'Вопрос' },
       activity: {
@@ -80,6 +80,7 @@ const DICT = {
       sort: 'Сорт.',
       sortRecent: 'Свежие',
       sortPriority: 'Приоритет',
+      sortVersion: 'Версия',
       filterAll: 'Все',
       tabActive: 'Активные',
       tabDone: 'Выполненные',
@@ -112,6 +113,10 @@ const DICT = {
       markDone: 'Отметить выполненным',
       editVersion: 'изменить',
       noVersion: 'версия не указана',
+      taskForYou: 'Задание для тебя',
+      taskForClient: 'Задание клиенту',
+      taskDoneClient: 'Отметить выполненным',
+      reopen: 'Вернуть в работу',
       actStatusTo: 'сменил статус → {v}',
       actPriorityTo: 'приоритет → {v}',
       confirmDeletePhoto: 'Удалить это фото?',
@@ -133,6 +138,8 @@ const DICT = {
       dropzone: 'Перетащите, вставьте (Ctrl+V) или нажмите',
       submit: 'Создать тикет',
       error: 'Ошибка создания тикета',
+      taskToggle: 'Задание для клиента',
+      taskHint: 'Тикет загорится красным и закрепится сверху у всех клиентов проекта.',
     },
     releases: {
       heading: 'Версии проекта',
@@ -237,7 +244,7 @@ const DICT = {
 
   pl: {
     enum: {
-      status: { new: 'Nowy', in_progress: 'W toku', done: 'Gotowe', rejected: 'Odrzucony', on_hold: 'Wstrzymany' },
+      status: { new: 'Nowy', in_progress: 'W toku', unclear: 'Niejasne', on_hold: 'Wstrzymany', deferred: 'Odłożone', done: 'Gotowe', rejected: 'Odrzucony' },
       priority: { low: 'Niski', medium: 'Średni', high: 'Wysoki', urgent: 'Pilne' },
       category: { bug: 'Błąd', change: 'Poprawka', feature: 'Nowa funkcja', question: 'Pytanie' },
       activity: {
@@ -297,6 +304,7 @@ const DICT = {
       sort: 'Sort.',
       sortRecent: 'Najnowsze',
       sortPriority: 'Priorytet',
+      sortVersion: 'Wersja',
       filterAll: 'Wszystkie',
       tabActive: 'Aktywne',
       tabDone: 'Gotowe',
@@ -329,6 +337,10 @@ const DICT = {
       markDone: 'Oznacz jako wykonane',
       editVersion: 'zmień',
       noVersion: 'wersja nieokreślona',
+      taskForYou: 'Zadanie dla Ciebie',
+      taskForClient: 'Zadanie dla klienta',
+      taskDoneClient: 'Oznacz jako wykonane',
+      reopen: 'Wznów',
       actStatusTo: 'zmienił status → {v}',
       actPriorityTo: 'priorytet → {v}',
       confirmDeletePhoto: 'Usunąć to zdjęcie?',
@@ -350,6 +362,8 @@ const DICT = {
       dropzone: 'Przeciągnij, wklej (Ctrl+V) lub kliknij',
       submit: 'Utwórz zgłoszenie',
       error: 'Błąd tworzenia zgłoszenia',
+      taskToggle: 'Zadanie dla klienta',
+      taskHint: 'Zgłoszenie zaświeci się na czerwono i przypnie na górze u wszystkich klientów projektu.',
     },
     releases: {
       heading: 'Wersje projektu',
@@ -454,7 +468,7 @@ const DICT = {
 
   en: {
     enum: {
-      status: { new: 'New', in_progress: 'In progress', done: 'Done', rejected: 'Rejected', on_hold: 'On hold' },
+      status: { new: 'New', in_progress: 'In progress', unclear: 'Unclear', on_hold: 'On hold', deferred: 'Deferred', done: 'Done', rejected: 'Rejected' },
       priority: { low: 'Low', medium: 'Medium', high: 'High', urgent: 'Urgent' },
       category: { bug: 'Bug', change: 'Change', feature: 'Feature', question: 'Question' },
       activity: {
@@ -514,6 +528,7 @@ const DICT = {
       sort: 'Sort',
       sortRecent: 'Recent',
       sortPriority: 'Priority',
+      sortVersion: 'Version',
       filterAll: 'All',
       tabActive: 'Active',
       tabDone: 'Done',
@@ -546,6 +561,10 @@ const DICT = {
       markDone: 'Mark as done',
       editVersion: 'edit',
       noVersion: 'version not specified',
+      taskForYou: 'Task for you',
+      taskForClient: 'Task for client',
+      taskDoneClient: 'Mark as done',
+      reopen: 'Reopen',
       actStatusTo: 'changed status → {v}',
       actPriorityTo: 'priority → {v}',
       confirmDeletePhoto: 'Delete this photo?',
@@ -567,6 +586,8 @@ const DICT = {
       dropzone: 'Drag, paste (Ctrl+V) or click',
       submit: 'Create ticket',
       error: 'Failed to create ticket',
+      taskToggle: 'Task for the client',
+      taskHint: 'The ticket turns red and is pinned to the top for all project clients.',
     },
     releases: {
       heading: 'Project releases',

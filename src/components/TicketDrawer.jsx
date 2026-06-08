@@ -29,6 +29,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const [fixModal, setFixModal] = useState(false)
   const [fixInput, setFixInput] = useState('')
   const [savingFix, setSavingFix] = useState(false)
+  const [savingClientStatus, setSavingClientStatus] = useState(false)
   const scrollRef = useRef(null)
   const fileRef = useRef(null)
   const addPhotoRef = useRef(null)
@@ -143,6 +144,25 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   function openVersionEditor() {
     setFixInput(ticket.fixed_version || '')
     setFixModal(true)
+  }
+
+  // Client-side status toggle for admin-assigned task tickets (mark done / reopen).
+  // No version prompt — fixed_version is an admin concept.
+  async function clientSetStatus(status) {
+    if (isAdmin || !ticket.is_task || status === ticket.status) return
+    setSavingClientStatus(true)
+    try {
+      const { error } = await supabase.from('tickets').update({ status }).eq('id', ticketId)
+      if (error) throw error
+      await markRead()
+      notify('status_changed', ticketId, { status })
+      onChanged?.()
+      load()
+    } catch (err) {
+      alert(err.message || err)
+    } finally {
+      setSavingClientStatus(false)
+    }
   }
 
   async function setPriority(priority) {
@@ -285,6 +305,15 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                       № {String(ticket.number).padStart(3, '0')}
                     </span>
                     <span className="label-sm">{t('enum.category.' + ticket.category)}</span>
+                    {ticket.is_task && (
+                      <span
+                        className={`flex items-center gap-1 px-1.5 py-0.5 font-mono uppercase tracking-label text-[9px] ${
+                          !isAdmin ? 'bg-accent text-bg' : 'border border-accent/40 text-accent'
+                        }`}
+                      >
+                        ★ {!isAdmin ? t('ticket.taskForYou') : t('ticket.taskForClient')}
+                      </span>
+                    )}
                   </div>
                   <h2 className="text-lg font-semibold leading-snug text-ink">{ticket.title}</h2>
                 </div>
@@ -329,6 +358,27 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                         </button>
                       )
                     })}
+                  </div>
+                ) : ticket.is_task ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge status={ticket.status} />
+                    {ticket.status !== 'done' ? (
+                      <button
+                        onClick={() => clientSetStatus('done')}
+                        disabled={savingClientStatus}
+                        className="btn-solid px-3 py-1.5 text-[11px] disabled:opacity-50"
+                      >
+                        {savingClientStatus ? <Spinner className="border-bg/40 border-t-bg" /> : t('ticket.taskDoneClient')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => clientSetStatus('in_progress')}
+                        disabled={savingClientStatus}
+                        className="label text-muted transition-colors hover:text-ink disabled:opacity-50"
+                      >
+                        {t('ticket.reopen')}
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <StatusBadge status={ticket.status} />

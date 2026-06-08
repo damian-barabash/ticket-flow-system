@@ -15,16 +15,26 @@ import { isDisplayableImage } from '../lib/files'
 import { Tour } from '../components/Tour'
 import { STATUS, STATUS_ORDER, PRIORITY_ORDER } from '../lib/constants'
 
+// Compare two version strings, newest first. Numeric segments compared in order
+// (1.10 > 1.9); empty/missing versions sink to the bottom; non-numeric → string fallback.
+function cmpVersionDesc(av, bv) {
+  if (!av && !bv) return 0
+  if (!av) return 1
+  if (!bv) return -1
+  const pa = av.split(/[^\d]+/).filter(Boolean).map(Number)
+  const pb = bv.split(/[^\d]+/).filter(Boolean).map(Number)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pb[i] || 0) - (pa[i] || 0)
+    if (d) return d
+  }
+  return av < bv ? 1 : av > bv ? -1 : 0
+}
+
 export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
   const { t } = useT()
-
-  const SORTS = [
-    { key: 'recent', label: t('project.sortRecent') },
-    { key: 'priority', label: t('project.sortPriority') },
-  ]
 
   // Done tickets live in their own tab, so the active board's status filter omits "done".
   const FILTERS = [
@@ -48,6 +58,13 @@ export default function ProjectDetail() {
   const [showCreate, setShowCreate] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+
+  // "By version" only makes sense on the Done tab (fixed_version). Available to admin & client.
+  const SORTS = [
+    { key: 'recent', label: t('project.sortRecent') },
+    { key: 'priority', label: t('project.sortPriority') },
+    ...(tab === 'done' ? [{ key: 'version', label: t('project.sortVersion') }] : []),
+  ]
 
   const load = useCallback(async () => {
     const [{ data: proj }, { data: tix }, { data: rd }] = await Promise.all([
@@ -142,6 +159,16 @@ export default function ProjectDetail() {
         return true
       })
       .sort((a, b) => {
+        // clients: active admin-assigned tasks are pinned to the very top
+        if (!isAdmin) {
+          const at = a.is_task && a.status !== 'done' ? 1 : 0
+          const bt = b.is_task && b.status !== 'done' ? 1 : 0
+          if (at !== bt) return bt - at
+        }
+        if (sort === 'version') {
+          const d = cmpVersionDesc(a.fixed_version, b.fixed_version)
+          if (d) return d
+        }
         if (sort === 'priority') {
           const d = rank(b.priority) - rank(a.priority)
           if (d) return d
@@ -149,7 +176,7 @@ export default function ProjectDetail() {
         // tie-break / default: newest first
         return new Date(b.created_at) - new Date(a.created_at)
       })
-  }, [tickets, tab, filter, sort, query])
+  }, [tickets, tab, filter, sort, query, isAdmin])
 
   function isUnread(t) {
     const r = reads[t.id]
@@ -229,6 +256,7 @@ export default function ProjectDetail() {
                   onClick={() => {
                     setTab(tabItem.key)
                     setFilter('all')
+                    if (tabItem.key !== 'done' && sort === 'version') setSort('recent')
                   }}
                   className={`-mb-px flex items-center gap-2 border-b-2 pb-2.5 font-mono uppercase tracking-label text-[11px] transition-colors ${
                     tab === tabItem.key ? 'border-accent text-ink' : 'border-transparent text-faint hover:text-muted'
