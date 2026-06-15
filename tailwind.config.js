@@ -17,6 +17,8 @@ export default {
         accentSoft: 'rgba(255,46,46,0.12)',
         ok: '#3FB950',          // done / available
         warn: '#E3B341',        // in progress
+        legend: '#A974FF',      // legendary violet (goals / deadlines)
+        legendSoft: 'rgba(169,116,255,0.10)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

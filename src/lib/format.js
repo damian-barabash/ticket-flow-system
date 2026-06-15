@@ -17,6 +17,15 @@ export function formatDate(iso) {
   return `${d.getDate()} ${months[d.getMonth()]} · ${hh}:${mm}`
 }
 
+// Date only (no time) — for deadline dates stored as 'YYYY-MM-DD'.
+export function formatDay(dateStr) {
+  if (!dateStr) return ''
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return String(dateStr)
+  const months = dict(curLang).months
+  return `${d} ${months[m - 1]} ${y}`
+}
+
 export function formatSize(bytes) {
   if (bytes == null) return ''
   const units = dict(curLang).units

@@ -11,6 +11,7 @@ import { TicketDrawer } from '../components/TicketDrawer'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { ManageMembersModal } from '../components/ManageMembersModal'
 import { ReleasesBlock } from '../components/ReleasesBlock'
+import { DeadlinesBlock } from '../components/DeadlinesBlock'
 import { isDisplayableImage } from '../lib/files'
 import { Tour } from '../components/Tour'
 import { STATUS, STATUS_ORDER, PRIORITY_ORDER } from '../lib/constants'
@@ -253,6 +254,9 @@ export default function ProjectDetail() {
                 </button>
               </div>
             </div>
+
+            {/* goals & deadlines (legendary block) */}
+            <DeadlinesBlock projectId={id} />
 
             {/* project releases (files + links) */}
             <ReleasesBlock projectId={id} />
