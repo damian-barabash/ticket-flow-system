@@ -9,7 +9,7 @@ import { ReleaseFormModal } from './ReleaseFormModal'
 // "Версии проекта" — files + links published by the admin. Each user sees whether
 // they already downloaded/opened an item; the admin additionally sees who did.
 export function ReleasesBlock({ projectId }) {
-  const { user, isAdmin } = useAuth()
+  const { user, isStaff } = useAuth()
   const { t } = useT()
   const [releases, setReleases] = useState([])
   const [myReads, setMyReads] = useState({}) // release_id -> accessed_at (current user)
@@ -41,7 +41,7 @@ export function ReleasesBlock({ projectId }) {
     ;(mine ?? []).forEach((r) => (mr[r.release_id] = r.accessed_at))
     setMyReads(mr)
 
-    if (isAdmin) {
+    if (isStaff) {
       const [{ data: reads }, { data: mem }] = await Promise.all([
         ids.length
           ? supabase.from('release_reads').select('release_id, user_id, accessed_at').in('release_id', ids)
@@ -61,7 +61,7 @@ export function ReleasesBlock({ projectId }) {
       }
     }
     setLoading(false)
-  }, [projectId, user.id, isAdmin])
+  }, [projectId, user.id, isStaff])
 
   useEffect(() => {
     setLoading(true)
@@ -83,7 +83,7 @@ export function ReleasesBlock({ projectId }) {
     const now = new Date().toISOString()
     setMyReads((p) => ({ ...p, [rel.id]: now }))
     await supabase.from('release_reads').upsert({ release_id: rel.id, user_id: user.id, accessed_at: now })
-    if (isAdmin) load()
+    if (isStaff) load()
   }
 
   async function openRelease(rel) {
@@ -107,7 +107,7 @@ export function ReleasesBlock({ projectId }) {
   }
 
   async function remove(rel) {
-    if (!isAdmin) return
+    if (!isStaff) return
     if (!confirm(t('releases.confirmDelete', { title: rel.title }))) return
     setBusyId(rel.id)
     try {
@@ -128,13 +128,13 @@ export function ReleasesBlock({ projectId }) {
   }
 
   // hide the whole block for clients when there is nothing published yet
-  if (!loading && releases.length === 0 && !isAdmin) return null
+  if (!loading && releases.length === 0 && !isStaff) return null
 
   return (
     <section className="mb-6 border border-line bg-surface" data-tour="releases">
       <div className="flex items-center justify-between border-b border-line px-4 py-3">
         <span className="label">{t('releases.heading')}</span>
-        {isAdmin && (
+        {isStaff && (
           <div className="flex gap-2">
             <button onClick={() => openAdd('file')} className="label text-muted transition-colors hover:text-ink">
               {t('releases.addFile')}
@@ -197,7 +197,7 @@ export function ReleasesBlock({ projectId }) {
                     {busyId === rel.id ? <Spinner className="h-3 w-3" /> : isFile ? t('releases.download') : t('releases.open')}
                   </button>
 
-                  {isAdmin && (
+                  {isStaff && (
                     <button
                       onClick={() => remove(rel)}
                       disabled={busyId === rel.id}
@@ -211,7 +211,7 @@ export function ReleasesBlock({ projectId }) {
                 </div>
 
                 {/* admin: who already downloaded/opened */}
-                {isAdmin && (
+                {isStaff && (
                   <div className="mt-2 pl-7">
                     <button
                       onClick={() => setExpanded((e) => (e === rel.id ? null : rel.id))}

@@ -34,7 +34,7 @@ function cmpVersionDesc(av, bv) {
 export default function ProjectDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isAdmin } = useAuth()
+  const { isStaff } = useAuth()
   const { t } = useT()
 
   // Done tickets live in their own tab, so the active board's status filter omits "done".
@@ -184,7 +184,7 @@ export default function ProjectDetail() {
       })
       .sort((a, b) => {
         // clients: active admin-assigned tasks are pinned to the very top
-        if (!isAdmin) {
+        if (!isStaff) {
           const at = a.is_task && a.status !== 'done' ? 1 : 0
           const bt = b.is_task && b.status !== 'done' ? 1 : 0
           if (at !== bt) return bt - at
@@ -200,7 +200,7 @@ export default function ProjectDetail() {
         // tie-break / default: newest first
         return new Date(b.created_at) - new Date(a.created_at)
       })
-  }, [tickets, tab, filter, sort, versionFilter, query, isAdmin])
+  }, [tickets, tab, filter, sort, versionFilter, query, isStaff])
 
   function isUnread(t) {
     const r = reads[t.id]
@@ -239,7 +239,7 @@ export default function ProjectDetail() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                {isAdmin && (
+                {isStaff && (
                   <>
                     <button onClick={() => setShowMembers(true)} className="btn-ghost" data-tour="members">
                       {t('project.members')}
@@ -424,10 +424,10 @@ export default function ProjectDetail() {
           onChanged={load}
         />
       )}
-      {isAdmin && showEdit && (
+      {isStaff && showEdit && (
         <ProjectFormModal open={showEdit} onClose={() => setShowEdit(false)} project={project} onSaved={load} />
       )}
-      {isAdmin && showMembers && (
+      {isStaff && showMembers && (
         <ManageMembersModal open={showMembers} onClose={() => setShowMembers(false)} projectId={id} />
       )}
 

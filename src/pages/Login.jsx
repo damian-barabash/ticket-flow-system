@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { LogoMark } from '../components/Logo'
@@ -8,6 +9,7 @@ import { LangSwitch } from '../components/LangSwitch'
 export default function Login() {
   const { signIn } = useAuth()
   const { t } = useT()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -34,7 +36,9 @@ export default function Login() {
 
       {/* top micro-labels */}
       <div className="absolute inset-x-6 top-6 flex items-center justify-between">
-        <span className="label">Ticket Flow — Studio · MMXXVI</span>
+        <button onClick={() => navigate('/')} className="label hover:text-ink transition-colors">
+          {t('register.toLanding')}
+        </button>
         <LangSwitch />
       </div>
 
@@ -78,6 +82,13 @@ export default function Login() {
             {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('login.submit')}
           </button>
         </form>
+
+        <p className="mt-5 text-center text-xs text-faint">
+          {t('login.noAccount')}{' '}
+          <button onClick={() => navigate('/register')} className="text-ink underline-offset-2 hover:underline">
+            {t('landing.hero.ctaPrimary')}
+          </button>
+        </p>
       </div>
 
       {/* bottom micro-labels */}

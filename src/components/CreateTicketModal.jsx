@@ -8,7 +8,7 @@ import { CATEGORY_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
 import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
-  const { user, isAdmin } = useAuth()
+  const { user, isStaff } = useAuth()
   const { t } = useT()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -158,9 +158,9 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           </span>
           <span className="min-w-0">
             <span className={`block font-mono uppercase tracking-label text-[10px] ${isTask ? 'text-accent' : 'text-muted'}`}>
-              {t(isAdmin ? 'createTicket.taskToggle' : 'createTicket.taskToggleSelf')}
+              {t(isStaff ? 'createTicket.taskToggle' : 'createTicket.taskToggleSelf')}
             </span>
-            <span className="mt-1 block text-xs text-faint">{t(isAdmin ? 'createTicket.taskHint' : 'createTicket.taskHintSelf')}</span>
+            <span className="mt-1 block text-xs text-faint">{t(isStaff ? 'createTicket.taskHint' : 'createTicket.taskHintSelf')}</span>
           </span>
         </button>
 

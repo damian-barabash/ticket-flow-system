@@ -76,6 +76,42 @@
       uppercase tracking-label text-[11px] px-5 py-2.5 hover:border-line2 hover:bg-surface2
       transition-colors disabled:opacity-40;
   }
+  /* accent (red) solid CTA — landing / registration */
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 bg-accent text-white font-mono uppercase
+      tracking-label text-[11px] px-6 py-3 transition-all hover:brightness-110
+      hover:shadow-[0_0_30px_-6px_rgba(255,46,46,0.6)] disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+}
+
+/* scroll-reveal: hidden until .is-in is toggled by IntersectionObserver */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+/* slow aurora drift for the landing hero backdrop */
+@keyframes auroraDrift {
+  0%   { transform: translate3d(-4%, -2%, 0) scale(1); }
+  50%  { transform: translate3d(4%, 3%, 0) scale(1.08); }
+  100% { transform: translate3d(-4%, -2%, 0) scale(1); }
+}
+.aurora {
+  animation: auroraDrift 18s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora { animation: none; }
 }
 
 /* ticket perforation line (dashed, like the logo) */

@@ -7,10 +7,14 @@ import { Avatar } from './ui'
 import { LangSwitch } from './LangSwitch'
 
 export function TopBar() {
-  const { profile, isAdmin, signOut } = useAuth()
+  const { profile, role, isStaff, signOut } = useAuth()
   const { t } = useT()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  const roleLabel = t(
+    role === 'moderator' ? 'topbar.moderator' : role === 'admin' ? 'topbar.admin' : 'topbar.client'
+  )
 
   // Close the mobile menu on Esc.
   useEffect(() => {
@@ -31,9 +35,9 @@ export function TopBar() {
           {/* Desktop: full inline layout */}
           <span className="hidden items-center gap-2 sm:flex">
             <span className="inline-block h-1.5 w-1.5 bg-ok" />
-            <span className="label">{isAdmin ? t('topbar.admin') : t('topbar.client')}</span>
+            <span className="label">{roleLabel}</span>
           </span>
-          {isAdmin && (
+          {isStaff && (
             <button
               onClick={() => navigate('/admin/users')}
               data-tour="users"
@@ -96,12 +100,12 @@ export function TopBar() {
                   </div>
                   <div className="mt-0.5 flex items-center gap-2">
                     <span className="inline-block h-1.5 w-1.5 bg-ok" />
-                    <span className="label">{isAdmin ? t('topbar.admin') : t('topbar.client')}</span>
+                    <span className="label">{roleLabel}</span>
                   </div>
                 </div>
               </div>
 
-              {isAdmin && (
+              {isStaff && (
                 <button
                   onClick={() => {
                     setMenuOpen(false)

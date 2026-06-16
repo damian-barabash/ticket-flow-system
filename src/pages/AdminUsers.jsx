@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
 import { Spinner, EmptyState, Avatar, Modal } from '../components/ui'
@@ -8,6 +9,7 @@ import { Spinner, EmptyState, Avatar, Modal } from '../components/ui'
 export default function AdminUsers() {
   const navigate = useNavigate()
   const { t } = useT()
+  const { user, isModerator } = useAuth()
   const [users, setUsers] = useState([])
   const [projects, setProjects] = useState([])
   const [membership, setMembership] = useState({})
@@ -15,6 +17,7 @@ export default function AdminUsers() {
   const [showCreate, setShowCreate] = useState(false)
 
   const load = useCallback(async () => {
+    // RLS scopes results: a moderator sees everyone, an admin sees only their own clients.
     const [{ data: profs }, { data: projs }, { data: mem }] = await Promise.all([
       supabase.from('profiles').select('id, full_name, email, role, created_at').order('created_at'),
       supabase.from('projects').select('id, name').order('created_at'),
@@ -41,8 +44,12 @@ export default function AdminUsers() {
     load()
   }
 
-  const clients = users.filter((u) => u.role !== 'admin')
+  // A row gets a remove button if the current staff member is allowed to delete it.
+  const canRemove = (u) => u.id !== user?.id && (isModerator ? true : u.role === 'user')
+
+  const moderators = users.filter((u) => u.role === 'moderator')
   const admins = users.filter((u) => u.role === 'admin')
+  const clients = users.filter((u) => u.role === 'user')
 
   return (
     <div className="min-h-screen">
@@ -56,7 +63,7 @@ export default function AdminUsers() {
           <div>
             <span className="label">{t('users.label')} · MMXXVI</span>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t('users.heading')}</h1>
-            <p className="mt-1 text-sm text-faint">{t('users.sub')}</p>
+            <p className="mt-1 text-sm text-faint">{isModerator ? t('users.subModerator') : t('users.sub')}</p>
           </div>
           <button onClick={() => setShowCreate(true)} className="btn-solid">
             {t('users.new')}
@@ -69,7 +76,12 @@ export default function AdminUsers() {
           </div>
         ) : (
           <div className="space-y-8">
-            <UserGroup title={t('users.admins')} users={admins} membership={membership} />
+            {isModerator && (
+              <UserGroup title={t('users.moderators')} users={moderators} membership={membership} canRemove={canRemove} onRemove={removeUser} />
+            )}
+            {isModerator && (
+              <UserGroup title={t('users.admins')} users={admins} membership={membership} canRemove={canRemove} onRemove={removeUser} />
+            )}
             {clients.length === 0 ? (
               <EmptyState title={t('users.emptyTitle')} hint={t('users.emptyHint')}>
                 <button onClick={() => setShowCreate(true)} className="btn-ghost">
@@ -77,7 +89,7 @@ export default function AdminUsers() {
                 </button>
               </EmptyState>
             ) : (
-              <UserGroup title={t('users.clients')} users={clients} membership={membership} onRemove={removeUser} />
+              <UserGroup title={t('users.clients')} users={clients} membership={membership} canRemove={canRemove} onRemove={removeUser} />
             )}
           </div>
         )}
@@ -87,6 +99,7 @@ export default function AdminUsers() {
         <CreateUserModal
           open={showCreate}
           projects={projects}
+          canPickRole={isModerator}
           onClose={() => setShowCreate(false)}
           onCreated={load}
         />
@@ -95,7 +108,13 @@ export default function AdminUsers() {
   )
 }
 
-function UserGroup({ title, users, membership, onRemove }) {
+function RoleBadge({ role }) {
+  const { t } = useT()
+  const color = role === 'moderator' ? 'text-legend' : role === 'admin' ? 'text-accent' : 'text-faint'
+  return <span className={`label-sm ${color}`}>{t('enum.role.' + role)}</span>
+}
+
+function UserGroup({ title, users, membership, canRemove, onRemove }) {
   const { t } = useT()
   if (!users.length) return null
   return (
@@ -109,17 +128,14 @@ function UserGroup({ title, users, membership, onRemove }) {
               <div className="truncate text-sm text-ink">{u.full_name || u.email}</div>
               {u.full_name && <div className="truncate text-xs text-faint">{u.email}</div>}
             </div>
-            {u.role !== 'admin' && (
+            {u.role === 'user' && (
               <span className="label-sm hidden sm:inline">{t('users.projectsCount', { n: membership[u.id] || 0 })}</span>
             )}
-            {u.role === 'admin' ? (
-              <span className="label-sm text-accent">admin</span>
-            ) : (
-              onRemove && (
-                <button onClick={() => onRemove(u)} className="label-sm text-faint hover:text-accent">
-                  {t('users.remove')}
-                </button>
-              )
+            <RoleBadge role={u.role} />
+            {canRemove?.(u) && onRemove && (
+              <button onClick={() => onRemove(u)} className="label-sm text-faint hover:text-accent">
+                {t('users.remove')}
+              </button>
             )}
           </li>
         ))}
@@ -128,14 +144,17 @@ function UserGroup({ title, users, membership, onRemove }) {
   )
 }
 
-function CreateUserModal({ open, onClose, onCreated, projects }) {
+function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
   const { t } = useT()
   const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [password, setPassword] = useState('')
+  const [role, setRole] = useState('user')
   const [picked, setPicked] = useState(new Set())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+
+  const ROLE_OPTIONS = ['user', 'admin', 'moderator']
 
   function genPassword() {
     const chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -165,7 +184,8 @@ function CreateUserModal({ open, onClose, onCreated, projects }) {
           email: email.trim(),
           password,
           full_name: fullName.trim() || null,
-          project_ids: [...picked],
+          role: canPickRole ? role : 'user',
+          project_ids: role === 'user' ? [...picked] : [],
         },
       })
       if (err) throw new Error(err.message)
@@ -181,6 +201,26 @@ function CreateUserModal({ open, onClose, onCreated, projects }) {
   return (
     <Modal open={open} onClose={onClose} title={t('users.modalTitle')} width="max-w-lg">
       <form onSubmit={submit}>
+        {canPickRole && (
+          <>
+            <label className="label mb-2 block">{t('users.role')}</label>
+            <div className="mb-5 flex flex-wrap gap-2">
+              {ROLE_OPTIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  className={`border px-3 py-1.5 text-xs transition-colors ${
+                    role === r ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
+                  }`}
+                >
+                  {t('enum.role.' + r)}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <label className="label mb-2 block">{t('users.name')}</label>
         <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('users.namePlaceholder')} className="field mb-5" />
 
@@ -208,7 +248,7 @@ function CreateUserModal({ open, onClose, onCreated, projects }) {
           </button>
         </div>
 
-        {projects.length > 0 && (
+        {role === 'user' && projects.length > 0 && (
           <>
             <label className="label mb-2 block">{t('users.access')}</label>
             <div className="mb-5 flex flex-wrap gap-2">

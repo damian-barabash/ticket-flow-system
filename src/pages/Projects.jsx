@@ -54,7 +54,7 @@ function ProjectCard({ project, index, counts, onOpen, tour }) {
 }
 
 export default function Projects() {
-  const { isAdmin } = useAuth()
+  const { isStaff } = useAuth()
   const { t } = useT()
   const navigate = useNavigate()
   const [projects, setProjects] = useState([])
@@ -101,10 +101,10 @@ export default function Projects() {
               {t('projects.heading')}
             </h1>
             <p className="mt-1.5 text-sm text-faint">
-              {isAdmin ? t('projects.subAdmin') : t('projects.subClient')}
+              {isStaff ? t('projects.subAdmin') : t('projects.subClient')}
             </p>
           </div>
-          {isAdmin && (
+          {isStaff && (
             <button onClick={() => setShowForm(true)} data-tour="new-project" className="btn-solid">
               {t('projects.newProject')}
             </button>
@@ -118,9 +118,9 @@ export default function Projects() {
         ) : projects.length === 0 ? (
           <EmptyState
             title={t('projects.emptyTitle')}
-            hint={isAdmin ? t('projects.emptyAdmin') : t('projects.emptyClient')}
+            hint={isStaff ? t('projects.emptyAdmin') : t('projects.emptyClient')}
           >
-            {isAdmin && (
+            {isStaff && (
               <button onClick={() => setShowForm(true)} className="btn-ghost">
                 {t('projects.newProject')}
               </button>
@@ -146,9 +146,9 @@ export default function Projects() {
 
       {!loading && (
         <Tour
-          storageKey={isAdmin ? 'projects-admin' : 'projects-client'}
+          storageKey={isStaff ? 'projects-admin' : 'projects-client'}
           steps={
-            isAdmin
+            isStaff
               ? [
                   {
                     title: t('tour.projAdmin0Title'),

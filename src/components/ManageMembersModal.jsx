@@ -17,7 +17,7 @@ export function ManageMembersModal({ open, onClose, projectId }) {
       supabase.from('profiles').select('id, full_name, email, role').order('created_at'),
       supabase.from('project_members').select('user_id').eq('project_id', projectId),
     ])
-    setUsers((profs ?? []).filter((p) => p.role !== 'admin'))
+    setUsers((profs ?? []).filter((p) => p.role === 'user'))
     setMemberIds(new Set((mem ?? []).map((m) => m.user_id)))
     setLoading(false)
   }

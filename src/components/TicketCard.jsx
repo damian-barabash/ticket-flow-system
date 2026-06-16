@@ -7,7 +7,7 @@ import { Avatar } from './ui'
 // A ticket rendered like a paper ticket: body + dashed perforation + stub.
 export function TicketCard({ ticket, unread, commentCount = 0, creator, photos = [], onOpen }) {
   const { t } = useT()
-  const { isAdmin } = useAuth()
+  const { isStaff } = useAuth()
   const s = STATUS[ticket.status] ?? STATUS.new
   const p = PRIORITY[ticket.priority] ?? PRIORITY.medium
   const statusKey = STATUS[ticket.status] ? ticket.status : 'new'
@@ -15,7 +15,7 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
 
   // Admin-assigned task: glows red + pinned for the client until done.
   const isTask = !!ticket.is_task
-  const clientTask = isTask && !isAdmin && ticket.status !== 'done'
+  const clientTask = isTask && !isStaff && ticket.status !== 'done'
 
   return (
     <button

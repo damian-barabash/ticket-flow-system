@@ -2,6 +2,8 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { LangProvider } from './context/LangContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import Landing from './pages/Landing'
+import Register from './pages/Register'
 import Login from './pages/Login'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
@@ -25,6 +27,8 @@ export default function App() {
       <LangProvider>
         <HashRouter>
           <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/login" element={<LoginRoute />} />
           <Route
             path="/projects"
@@ -45,12 +49,12 @@ export default function App() {
           <Route
             path="/admin/users"
             element={
-              <ProtectedRoute adminOnly>
+              <ProtectedRoute staffOnly>
                 <AdminUsers />
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/projects" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </HashRouter>
       </LangProvider>

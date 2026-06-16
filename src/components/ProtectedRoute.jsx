@@ -2,8 +2,8 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Spinner } from './ui'
 
-export function ProtectedRoute({ children, adminOnly = false }) {
-  const { session, isAdmin, loading } = useAuth()
+export function ProtectedRoute({ children, staffOnly = false }) {
+  const { session, isStaff, loading } = useAuth()
 
   if (loading) {
     return (
@@ -13,6 +13,6 @@ export function ProtectedRoute({ children, adminOnly = false }) {
     )
   }
   if (!session) return <Navigate to="/login" replace />
-  if (adminOnly && !isAdmin) return <Navigate to="/projects" replace />
+  if (staffOnly && !isStaff) return <Navigate to="/projects" replace />
   return children
 }

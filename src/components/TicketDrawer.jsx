@@ -11,7 +11,7 @@ import { Thumb } from './Thumb'
 import { isImageFile, imageExt, imageContentType } from '../lib/files'
 
 export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
-  const { user, isAdmin } = useAuth()
+  const { user, isStaff } = useAuth()
   const { t } = useT()
   const [ticket, setTicket] = useState(null)
   const [comments, setComments] = useState([])
@@ -105,7 +105,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   }, [comments.length, activity.length])
 
   async function setStatus(status) {
-    if (!isAdmin || status === ticket.status) return
+    if (!isStaff || status === ticket.status) return
     // marking done → ask which project version fixes it (optional)
     if (status === 'done') {
       setFixInput(ticket.fixed_version || '')
@@ -149,7 +149,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   // Client-side status toggle for admin-assigned task tickets (mark done / reopen).
   // No version prompt — fixed_version is an admin concept.
   async function clientSetStatus(status) {
-    if (isAdmin || !ticket.is_task || status === ticket.status) return
+    if (isStaff || !ticket.is_task || status === ticket.status) return
     setSavingClientStatus(true)
     try {
       const { error } = await supabase.from('tickets').update({ status }).eq('id', ticketId)
@@ -166,7 +166,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   }
 
   async function setPriority(priority) {
-    if (!isAdmin || priority === ticket.priority) return
+    if (!isStaff || priority === ticket.priority) return
     await supabase.from('tickets').update({ priority }).eq('id', ticketId)
     onChanged?.()
   }
@@ -212,7 +212,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
     }
   }
 
-  const canDeletePhoto = useCallback((a) => isAdmin || a.uploaded_by === user.id, [isAdmin, user.id])
+  const canDeletePhoto = useCallback((a) => isStaff || a.uploaded_by === user.id, [isStaff, user.id])
 
   // delete a single attachment: storage object first, then the DB row
   async function deletePhoto(att) {
@@ -232,7 +232,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   }
 
   async function deleteTicket() {
-    if (!isAdmin) return
+    if (!isStaff) return
     if (!confirm(t('ticket.confirmDeleteTicket', { title: ticket.title }))) return
     setDeleting(true)
     try {
@@ -308,17 +308,17 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     {ticket.is_task && (
                       <span
                         className={`flex items-center gap-1 px-1.5 py-0.5 font-mono uppercase tracking-label text-[9px] ${
-                          !isAdmin ? 'bg-accent text-bg' : 'border border-accent/40 text-accent'
+                          !isStaff ? 'bg-accent text-bg' : 'border border-accent/40 text-accent'
                         }`}
                       >
-                        ★ {!isAdmin ? t('ticket.taskForYou') : t('ticket.taskForClient')}
+                        ★ {!isStaff ? t('ticket.taskForYou') : t('ticket.taskForClient')}
                       </span>
                     )}
                   </div>
                   <h2 className="text-lg font-semibold leading-snug text-ink">{ticket.title}</h2>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                  {isAdmin && (
+                  {isStaff && (
                     <button
                       onClick={deleteTicket}
                       disabled={deleting}
@@ -338,7 +338,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
               {/* status control */}
               <div className="mb-3">
                 <span className="label mb-2 block">{t('ticket.status')}</span>
-                {isAdmin ? (
+                {isStaff ? (
                   <div className="flex flex-wrap gap-1.5">
                     {STATUS_ORDER.map((k) => {
                       const active = ticket.status === k
@@ -401,7 +401,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     ) : (
                       <span className="font-mono text-[11px] text-faint">{t('ticket.noVersion')}</span>
                     )}
-                    {isAdmin && (
+                    {isStaff && (
                       <button onClick={openVersionEditor} className="label text-muted transition-colors hover:text-ink">
                         {t('ticket.editVersion')}
                       </button>
@@ -414,7 +414,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
                 <div>
                   <span className="label mb-1.5 block">{t('ticket.priority')}</span>
-                  {isAdmin ? (
+                  {isStaff ? (
                     <div className="flex gap-1.5">
                       {PRIORITY_ORDER.map((k) => (
                         <button

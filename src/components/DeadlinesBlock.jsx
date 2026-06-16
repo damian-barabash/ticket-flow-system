@@ -18,7 +18,7 @@ function daysLeft(dateStr) {
 // "Цели и дедлайны" — a legendary (violet) block above the project releases.
 // Admins AND project members can add goals with a deadline; many at once.
 export function DeadlinesBlock({ projectId }) {
-  const { user, isAdmin } = useAuth()
+  const { user, isStaff } = useAuth()
   const { t } = useT()
   const [items, setItems] = useState([])
   const [names, setNames] = useState({}) // user_id -> label
@@ -60,7 +60,7 @@ export function DeadlinesBlock({ projectId }) {
   }, [projectId, load])
 
   // can edit/delete: admin or the goal's author
-  const canManage = (it) => isAdmin || it.created_by === user.id
+  const canManage = (it) => isStaff || it.created_by === user.id
 
   async function toggleDone(it) {
     if (!canManage(it)) return
@@ -110,7 +110,7 @@ export function DeadlinesBlock({ projectId }) {
   }
 
   // hide entirely for clients when nothing is set yet
-  if (!loading && sorted.length === 0 && !isAdmin) return null
+  if (!loading && sorted.length === 0 && !isStaff) return null
 
   return (
     <section

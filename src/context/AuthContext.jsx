@@ -71,11 +71,17 @@ export function AuthProvider({ children }) {
     setProfile(null)
   }, [])
 
+  const role = profile?.role ?? null
   const value = {
     session,
     user: session?.user ?? null,
     profile,
-    isAdmin: profile?.role === 'admin',
+    role,
+    // Three-tier model: moderator (super-admin, sees all) > admin (owns projects) > user (client).
+    isModerator: role === 'moderator',
+    isAdmin: role === 'admin',
+    // "staff" = project manager (admin or moderator); used for management UI gating.
+    isStaff: role === 'admin' || role === 'moderator',
     loading,
     signIn,
     signOut,
