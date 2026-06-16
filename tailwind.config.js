@@ -4,21 +4,24 @@ export default {
   theme: {
     extend: {
       colors: {
-        // editorial-dark palette
-        bg: '#0A0A0B',          // near-black canvas
-        surface: '#141416',     // raised panels / cards
-        surface2: '#1B1B1E',    // inputs, hover
-        line: '#262629',        // hairline borders
-        line2: '#34343A',       // stronger hairline
-        ink: '#EDEDED',         // primary text
-        muted: '#8A8A92',       // secondary text
-        faint: '#55555C',       // micro labels
-        accent: '#FF2E2E',      // logo red
-        accentSoft: 'rgba(255,46,46,0.12)',
-        ok: '#3FB950',          // done / available
-        warn: '#E3B341',        // in progress
-        legend: '#A974FF',      // legendary violet (goals / deadlines)
-        legendSoft: 'rgba(169,116,255,0.10)',
+        // Palette is driven by CSS variables (channel triplets) so a `.theme-light`
+        // scope can recolour the landing without touching the dark panel. :root holds
+        // the original editorial-dark values, so everything outside .theme-light is
+        // pixel-identical to before.
+        bg: 'rgb(var(--c-bg) / <alpha-value>)',
+        surface: 'rgb(var(--c-surface) / <alpha-value>)',
+        surface2: 'rgb(var(--c-surface2) / <alpha-value>)',
+        line: 'rgb(var(--c-line) / <alpha-value>)',
+        line2: 'rgb(var(--c-line2) / <alpha-value>)',
+        ink: 'rgb(var(--c-ink) / <alpha-value>)',
+        muted: 'rgb(var(--c-muted) / <alpha-value>)',
+        faint: 'rgb(var(--c-faint) / <alpha-value>)',
+        accent: 'rgb(var(--c-accent) / <alpha-value>)',
+        accentSoft: 'rgb(var(--c-accent) / 0.12)',
+        ok: 'rgb(var(--c-ok) / <alpha-value>)',
+        warn: 'rgb(var(--c-warn) / <alpha-value>)',
+        legend: 'rgb(var(--c-legend) / <alpha-value>)',
+        legendSoft: 'rgb(var(--c-legend) / 0.10)',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

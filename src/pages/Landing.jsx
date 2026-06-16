@@ -61,6 +61,21 @@ export default function Landing() {
   const [faqOpen, setFaqOpen] = useState(0)
   const [useCase, setUseCase] = useState(1)
   const [feat, setFeat] = useState(1)
+  // Light theme lives ONLY on the landing (the panel stays dark). Persisted locally.
+  const [light, setLight] = useState(() => {
+    try {
+      return localStorage.getItem('tf_landing_theme') === 'light'
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('tf_landing_theme', light ? 'light' : 'dark')
+    } catch {
+      /* ignore */
+    }
+  }, [light])
 
   const go = (path) => navigate(path)
   const navItems = [
@@ -72,7 +87,7 @@ export default function Landing() {
   ]
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className={`relative min-h-screen overflow-x-hidden bg-bg text-ink ${light ? 'theme-light' : ''}`}>
       {/* ───────────────────────── FIXED / FLOATING HEADER */}
       <header className="fixed inset-x-0 top-0 z-50">
         {/* outer layer adds side/top insets when scrolled; inner stays centred (mx-auto) */}
@@ -96,6 +111,22 @@ export default function Landing() {
             ))}
           </nav>
           <div className="flex items-center gap-3 sm:gap-4">
+            <button
+              onClick={() => setLight((v) => !v)}
+              aria-label="theme"
+              className="flex h-9 w-9 items-center justify-center border border-line text-muted transition-colors hover:text-ink"
+            >
+              {light ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.6" />
+                  <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
             <LangSwitch />
             {session ? (
               <button onClick={() => go('/projects')} className="btn-accent !px-5 !py-2.5">

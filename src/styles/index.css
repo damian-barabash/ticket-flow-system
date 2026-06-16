@@ -3,8 +3,42 @@
 @tailwind utilities;
 
 @layer base {
+  /* editorial-dark palette (channel triplets for rgb(var() / alpha)) — the default
+     everywhere, so the panel is unchanged. */
   :root {
     color-scheme: dark;
+    --c-bg: 10 10 11;
+    --c-surface: 20 20 22;
+    --c-surface2: 27 27 30;
+    --c-line: 38 38 41;
+    --c-line2: 52 52 58;
+    --c-ink: 237 237 237;
+    --c-muted: 138 138 146;
+    --c-faint: 85 85 92;
+    --c-accent: 255 46 46;
+    --c-ok: 63 185 80;
+    --c-warn: 227 179 65;
+    --c-legend: 169 116 255;
+    --dot: rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(10, 10, 11, 0.55);
+  }
+  /* light theme — scoped to the landing only (.theme-light wrapper) */
+  .theme-light {
+    color-scheme: light;
+    --c-bg: 250 250 248;
+    --c-surface: 255 255 255;
+    --c-surface2: 242 242 238;
+    --c-line: 226 226 221;
+    --c-line2: 208 208 201;
+    --c-ink: 22 22 26;
+    --c-muted: 90 90 98;
+    --c-faint: 138 138 144;
+    --c-accent: 222 30 30;
+    --c-ok: 30 140 56;
+    --c-warn: 176 124 8;
+    --c-legend: 124 58 237;
+    --dot: rgba(0, 0, 0, 0.06);
+    --glass-bg: rgba(255, 255, 255, 0.6);
   }
   html,
   body,
@@ -24,9 +58,9 @@
   ::selection {
     background: rgba(255, 46, 46, 0.28);
   }
-  /* faint dot-grid backdrop, editorial-dark */
+  /* faint dot-grid backdrop (theme-aware) */
   .dotgrid {
-    background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px);
     background-size: 26px 26px;
     background-position: -1px -1px;
   }
@@ -52,7 +86,7 @@
     position: absolute;
     width: 14px;
     height: 14px;
-    border-color: theme('colors.line2');
+    border-color: rgb(var(--c-line2));
     pointer-events: none;
   }
   .brackets::before {
@@ -181,9 +215,9 @@
   .viz-fill { width: 100%; }
 }
 
-/* frosted "matte" glass — floating header on scroll */
+/* frosted "matte" glass — floating header on scroll (theme-aware) */
 .glass {
-  background: rgba(10, 10, 11, 0.55);
+  background: var(--glass-bg);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
 }
@@ -199,8 +233,8 @@
 .perforation {
   background-image: repeating-linear-gradient(
     to right,
-    theme('colors.line2') 0,
-    theme('colors.line2') 5px,
+    rgb(var(--c-line2)) 0,
+    rgb(var(--c-line2)) 5px,
     transparent 5px,
     transparent 11px
   );
