@@ -15,6 +15,12 @@
     @apply bg-bg text-ink font-sans antialiased;
     margin: 0;
   }
+  /* display face for headings — distinctive, editorial-tech */
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
   ::selection {
     background: rgba(255, 46, 46, 0.28);
   }
@@ -110,8 +116,54 @@
 .aurora {
   animation: auroraDrift 18s ease-in-out infinite;
 }
+
+/* gentle float for the floating hero ticket card */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.float {
+  animation: floaty 6s ease-in-out infinite;
+}
+
+/* animated accent gradient sweep on headline word */
+@keyframes shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.grad-accent {
+  background: linear-gradient(100deg, #FF2E2E 0%, #FF6A6A 30%, #A974FF 60%, #FF2E2E 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 7s linear infinite;
+}
+
+/* content swap pop-in for interactive tabs / selectors */
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.pop {
+  animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
 @media (prefers-reduced-motion: reduce) {
-  .aurora { animation: none; }
+  .pop { animation: none; }
+}
+
+/* frosted "matte" glass — floating header on scroll */
+.glass {
+  background: rgba(10, 10, 11, 0.55);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora,
+  .float,
+  .grad-accent { animation: none; }
+  .grad-accent { color: #FF6A6A; }
 }
 
 /* ticket perforation line (dashed, like the logo) */

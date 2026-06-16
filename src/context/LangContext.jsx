@@ -11,14 +11,14 @@ const CACHE_KEY = 'tf_lang'
 // only a pre-login cache so the login screen doesn't flash the wrong language and
 // so a returning user sees their last choice instantly before the profile loads.
 function initialLang() {
+  // Returning visitors keep their last choice; everyone else defaults to Polish.
   try {
     const cached = localStorage.getItem(CACHE_KEY)
     if (cached && LANG_CODES.includes(cached)) return cached
   } catch {
     /* ignore */
   }
-  const nav = (typeof navigator !== 'undefined' && navigator.language) || ''
-  return normalizeLang(nav.slice(0, 2))
+  return DEFAULT_LANG
 }
 
 export function LangProvider({ children }) {

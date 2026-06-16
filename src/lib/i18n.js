@@ -2,7 +2,7 @@
 // Language preference is persisted per-user in profiles.language (backend),
 // not in localStorage — localStorage is only a pre-login cache to avoid a flash.
 
-export const DEFAULT_LANG = 'ru'
+export const DEFAULT_LANG = 'pl'
 
 export const LANGUAGES = [
   { code: 'ru', label: 'RU', name: 'Русский' },
@@ -265,7 +265,7 @@ const DICT = {
     landing: {
       nav: { features: 'Возможности', pricing: 'Цена', compare: 'Сравнение', faq: 'Вопросы', login: 'Войти', signup: 'Начать' },
       hero: {
-        badge: 'Тикет-система для агентств, студий и фрилансеров',
+        badge: 'Тикет-система для агентств, команд и фрилансеров',
         line1: 'Правки клиентов больше не теряются',
         line2: 'в чатах и переписке',
         sub: 'Ticket Flow — панель, где клиент заводит задачу с фото, а вы ведёте её от «Новый» до «Выполнено». Без хаоса в мессенджерах, без забытых правок, без «а где мы это обсуждали».',
@@ -276,6 +276,20 @@ const DICT = {
         demoTitle: 'Поправить шапку на мобильной версии',
         demoDesc: 'Логотип наезжает на меню на iPhone. Прикладываю скрин.',
         demoNew: 'ново',
+      },
+      useCases: {
+        label: 'Сценарии',
+        title: 'Не только для клиентов',
+        sub: 'Ticket Flow одинаково хорош там, где задачи приходят снаружи — и внутри компании.',
+        tab1: 'Агентство ↔ клиент',
+        tab2: 'Внутри команды',
+        tab3: 'Фрилансер ↔ заказчик',
+        t1t: 'Правки от клиентов',
+        t1d: 'Клиент сам заводит задачи с фото, видит статусы и версии. Вы не тонете в переписке и ничего не теряете.',
+        t2t: 'Внутренняя тикет-система',
+        t2d: 'Заведите проекты под отделы и ведите задачи внутри фирмы: баги, правки, поручения сотрудникам — со статусами, дедлайнами и историей.',
+        t3t: 'Личный поток заказов',
+        t3d: 'Один кабинет на всех заказчиков. Каждый видит только свой проект, а вы — единую доску задач и дедлайнов.',
       },
       problem: {
         label: 'Проблема',
@@ -674,7 +688,7 @@ const DICT = {
     landing: {
       nav: { features: 'Funkcje', pricing: 'Cena', compare: 'Porównanie', faq: 'Pytania', login: 'Zaloguj', signup: 'Zacznij' },
       hero: {
-        badge: 'System zgłoszeń dla agencji, studiów i freelancerów',
+        badge: 'System zgłoszeń dla agencji, zespołów i freelancerów',
         line1: 'Poprawki klientów nie giną już',
         line2: 'w czatach i mailach',
         sub: 'Ticket Flow to panel, w którym klient zakłada zadanie ze zdjęciem, a Ty prowadzisz je od „Nowy” do „Gotowe”. Bez chaosu w komunikatorach, bez zapomnianych poprawek, bez „a gdzie to ustalaliśmy?”.',
@@ -685,6 +699,20 @@ const DICT = {
         demoTitle: 'Poprawić nagłówek w wersji mobilnej',
         demoDesc: 'Logo nachodzi na menu na iPhone. Załączam zrzut.',
         demoNew: 'nowe',
+      },
+      useCases: {
+        label: 'Scenariusze',
+        title: 'Nie tylko dla klientów',
+        sub: 'Ticket Flow sprawdza się tak samo, gdy zadania przychodzą z zewnątrz — i wewnątrz firmy.',
+        tab1: 'Agencja ↔ klient',
+        tab2: 'Wewnątrz zespołu',
+        tab3: 'Freelancer ↔ klient',
+        t1t: 'Poprawki od klientów',
+        t1d: 'Klient sam zakłada zadania ze zdjęciami, widzi statusy i wersje. Nie toniesz w korespondencji i nic nie ginie.',
+        t2t: 'Wewnętrzny system zgłoszeń',
+        t2d: 'Załóż projekty dla działów i prowadź zadania wewnątrz firmy: błędy, poprawki, polecenia dla pracowników — ze statusami, terminami i historią.',
+        t3t: 'Własny przepływ zleceń',
+        t3d: 'Jeden panel na wszystkich klientów. Każdy widzi tylko swój projekt, a Ty — wspólną tablicę zadań i terminów.',
       },
       problem: {
         label: 'Problem',
@@ -1083,7 +1111,7 @@ const DICT = {
     landing: {
       nav: { features: 'Features', pricing: 'Pricing', compare: 'Compare', faq: 'FAQ', login: 'Sign in', signup: 'Start' },
       hero: {
-        badge: 'Ticket system for agencies, studios and freelancers',
+        badge: 'Ticket system for agencies, teams and freelancers',
         line1: 'Client requests stop getting lost',
         line2: 'in chats and email',
         sub: 'Ticket Flow is a panel where your client files a request with a photo, and you move it from “New” to “Done”. No messenger chaos, no forgotten fixes, no “where did we discuss this?”.',
@@ -1094,6 +1122,20 @@ const DICT = {
         demoTitle: 'Fix the header on mobile',
         demoDesc: 'The logo overlaps the menu on iPhone. Screenshot attached.',
         demoNew: 'new',
+      },
+      useCases: {
+        label: 'Use cases',
+        title: 'Not only for clients',
+        sub: 'Ticket Flow works just as well when work comes from the outside — and from inside the company.',
+        tab1: 'Agency ↔ client',
+        tab2: 'Inside a team',
+        tab3: 'Freelancer ↔ client',
+        t1t: 'Client requests',
+        t1d: 'Clients file tasks with photos themselves and follow statuses and versions. You stop drowning in chat and nothing gets lost.',
+        t2t: 'Internal ticket system',
+        t2d: 'Create projects per department and run work inside the company: bugs, fixes, assignments — with statuses, deadlines and history.',
+        t3t: 'Your own order flow',
+        t3d: 'One workspace for all clients. Each one sees only their project, while you get a single board of tasks and deadlines.',
       },
       problem: {
         label: 'Problem',
