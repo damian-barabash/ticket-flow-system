@@ -75,11 +75,13 @@ export default function Landing() {
     <div className="relative min-h-screen overflow-x-hidden">
       {/* ───────────────────────── FIXED / FLOATING HEADER */}
       <header className="fixed inset-x-0 top-0 z-50">
+        {/* outer layer adds side/top insets when scrolled; inner stays centred (mx-auto) */}
+        <div className={`transition-all duration-300 ${scrolled ? 'px-3 pt-3 sm:px-8' : 'px-0 pt-0'}`}>
         <div
           className={`mx-auto flex items-center justify-between transition-all duration-300 ${
             scrolled
-              ? 'mt-3 max-w-[1180px] rounded-2xl border border-line glass px-4 py-3 shadow-[0_18px_50px_-24px_rgba(0,0,0,0.9)] mx-4 sm:mx-8'
-              : 'mt-0 max-w-[1240px] rounded-none border-b border-line bg-bg/70 px-5 py-4 backdrop-blur sm:px-8'
+              ? 'max-w-[1160px] rounded-2xl border border-line glass px-5 py-3 shadow-[0_18px_50px_-24px_rgba(0,0,0,0.9)]'
+              : 'max-w-[1240px] rounded-none border-b border-line bg-bg/70 px-5 py-4 backdrop-blur sm:px-8'
           }`}
         >
           <button onClick={() => go('/')} className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
@@ -111,6 +113,7 @@ export default function Landing() {
             )}
           </div>
         </div>
+        </div>
       </header>
       <div aria-hidden className="h-[72px]" />
 
@@ -127,11 +130,7 @@ export default function Landing() {
 
         <div className="mx-auto grid max-w-[1240px] gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
           <div className="reveal flex flex-col items-start justify-center">
-            <span className="inline-flex items-center gap-2.5 label">
-              <LogoMark size={16} />
-              <span className="inline-block h-1.5 w-1.5 bg-accent" />
-              {t('landing.hero.badge')}
-            </span>
+            <LogoMark size={40} />
             <h1 className="mt-6 text-4xl font-semibold leading-[1.05] tracking-tight text-ink sm:text-5xl lg:text-[56px]">
               {t('landing.hero.line1')}{' '}
               <span className="grad-accent">{t('landing.hero.line2')}</span>
@@ -141,7 +140,7 @@ export default function Landing() {
               <button onClick={() => go('/register')} className="btn-accent">{t('landing.hero.ctaPrimary')}</button>
               <button onClick={() => go('/login')} className="btn-ghost">{t('landing.hero.ctaSecondary')}</button>
             </div>
-            <p className="mt-5 label">{t('landing.hero.trust')}</p>
+            <p className="mt-6 text-xs text-muted">{t('landing.hero.trust')}</p>
           </div>
 
           {/* floating ticket mock */}
@@ -289,12 +288,10 @@ export default function Landing() {
               )
             })}
           </div>
-          <div key={feat} className="pop flex flex-col justify-center border border-line2 bg-surface p-8">
-            <div className="flex h-11 w-11 items-center justify-center border border-line2 font-mono text-sm text-accent">
-              {String(feat).padStart(2, '0')}
-            </div>
-            <h3 className="mt-5 text-xl font-medium text-ink">{t(`landing.features.f${feat}t`)}</h3>
-            <p className="mt-3 max-w-[460px] text-[15px] leading-relaxed text-muted">{t(`landing.features.f${feat}d`)}</p>
+          <div key={feat} className="pop flex flex-col border border-line2 bg-surface p-6">
+            <FeatureViz index={feat} />
+            <h3 className="mt-6 text-xl font-medium text-ink">{t(`landing.features.f${feat}t`)}</h3>
+            <p className="mt-2 max-w-[460px] text-[15px] leading-relaxed text-muted">{t(`landing.features.f${feat}d`)}</p>
           </div>
         </div>
       </Section>
@@ -465,6 +462,140 @@ export default function Landing() {
   )
 }
 
+function Cursor({ className = '' }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" className={className} aria-hidden="true">
+      <path d="M5 3l14 7-6 2-2 6-6-15z" fill="#EDEDED" stroke="#0A0A0B" strokeWidth="1.2" />
+    </svg>
+  )
+}
+
+// Per-feature ambient animation shown in the right panel of the Features selector.
+function FeatureViz({ index }) {
+  const { t } = useT()
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 1300)
+    return () => clearInterval(id)
+  }, [])
+
+  const box = 'relative grid h-[200px] place-items-center overflow-hidden border border-line bg-bg/40'
+
+  // 01 — drag a photo into a dropzone, mouse cursor follows
+  if (index === 1) {
+    return (
+      <div className={box}>
+        <div className="grid h-20 w-28 place-items-center border border-dashed border-line2">
+          <div className="viz-land dotgrid h-12 w-12 border border-accent/50" />
+        </div>
+        <div className="viz-drag absolute left-1/2 top-1/2 -ml-6 -mt-6">
+          <div className="dotgrid h-12 w-12 border border-accent/60 bg-surface shadow-lg" />
+          <Cursor className="absolute -bottom-2 -right-2" />
+        </div>
+      </div>
+    )
+  }
+
+  // 02 — status cycling with progress
+  if (index === 2) {
+    const s = DEMO_STATUSES[tick % DEMO_STATUSES.length]
+    return (
+      <div className={box}>
+        <div className="flex flex-col items-center gap-4">
+          <span
+            key={s}
+            className="pop inline-flex items-center gap-2 border px-4 py-2 font-mono text-xs uppercase tracking-label"
+            style={{ color: STATUS[s].text, borderColor: STATUS[s].dot + '66' }}
+          >
+            <span className="h-2 w-2" style={{ background: STATUS[s].dot }} />
+            {t('enum.status.' + s)}
+          </span>
+          <div className="h-1 w-40 overflow-hidden bg-surface2">
+            <div className="h-full transition-all duration-500" style={{ width: DEMO_PROGRESS[s] + '%', background: STATUS[s].dot }} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 03 — thread bubbles appearing
+  if (index === 3) {
+    const n = (tick % 3) + 1
+    const bubbles = [
+      { me: false, w: 'w-32' },
+      { me: true, w: 'w-24' },
+      { me: false, w: 'w-28' },
+    ]
+    return (
+      <div className={`${box} !block p-5`}>
+        <div className="flex h-full flex-col justify-end gap-2">
+          {bubbles.slice(0, n).map((b, i) => (
+            <div key={`${tick}-${i}`} className={`pop h-7 rounded-md ${b.w} ${b.me ? 'self-end bg-accent/80' : 'self-start bg-surface2'}`} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // 04 — release download progress
+  if (index === 4) {
+    return (
+      <div className={box}>
+        <div className="w-full max-w-[260px] border border-line bg-surface p-4">
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-xs text-ink">build-v1.2.0.zip</span>
+            <span className="text-accent">↓</span>
+          </div>
+          <div className="mt-3 h-1.5 w-full overflow-hidden bg-surface2">
+            <div className="viz-fill h-full bg-accent" />
+          </div>
+          <div className="mt-2 font-mono text-[10px] uppercase tracking-label text-faint">v1.2.0 · 3 / 4</div>
+        </div>
+      </div>
+    )
+  }
+
+  // 05 — goal countdown
+  if (index === 5) {
+    const days = 6 - (tick % 7)
+    const color = days <= 1 ? '#FF2E2E' : days <= 3 ? '#E3B341' : '#A974FF'
+    return (
+      <div className={box}>
+        <div className="w-full max-w-[240px] border p-4" style={{ borderColor: color + '66', boxShadow: `0 0 40px -18px ${color}` }}>
+          <div className="font-mono text-[10px] uppercase tracking-label text-faint">{t('deadlines.heading')}</div>
+          <div className="mt-1 text-sm text-ink">Launch v1.0</div>
+          <div key={days} className="pop mt-3 text-4xl font-semibold" style={{ color }}>
+            {days}
+            <span className="text-base text-faint"> dni</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 06 — language switch
+  const langs = ['ru', 'pl', 'en']
+  const hello = { ru: 'Привет', pl: 'Cześć', en: 'Hello' }
+  const li = tick % 3
+  return (
+    <div className={box}>
+      <div className="flex flex-col items-center gap-4">
+        <div key={li} className="pop text-3xl font-semibold text-ink">{hello[langs[li]]}</div>
+        <div className="flex gap-2">
+          {langs.map((l, i) => (
+            <span
+              key={l}
+              className={`border px-2.5 py-1 font-mono text-[10px] uppercase tracking-label ${i === li ? 'border-accent text-accent' : 'border-line text-faint'}`}
+            >
+              {l}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function Section({ id, children }) {
   return (
     <section id={id} className="mx-auto max-w-[1240px] scroll-mt-28 px-5 py-20 sm:px-8">
@@ -473,14 +604,11 @@ function Section({ id, children }) {
   )
 }
 
-function SectionHead({ label, title, sub }) {
+function SectionHead({ title, sub }) {
   return (
     <div className="reveal mb-10 max-w-[680px]">
-      <span className="flex items-center gap-2 label">
-        <LogoMark size={13} />
-        {label}
-      </span>
-      <h2 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{title}</h2>
+      <LogoMark size={22} />
+      <h2 className="mt-4 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{title}</h2>
       {sub && <p className="mt-3 text-[15px] leading-relaxed text-muted">{sub}</p>}
     </div>
   )

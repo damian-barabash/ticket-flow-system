@@ -152,6 +152,35 @@
   .pop { animation: none; }
 }
 
+/* ── feature visualisations ───────────────────────────── */
+/* drag a photo into the dropzone (mouse follows), loop */
+@keyframes vizDrag {
+  0%   { transform: translate(96px, -52px) scale(0.9); opacity: 0; }
+  12%  { opacity: 1; }
+  52%  { transform: translate(0, 0) scale(1); opacity: 1; }
+  66%  { transform: translate(0, 0) scale(1); }
+  78%  { opacity: 1; }
+  90%  { opacity: 0; }
+  100% { transform: translate(96px, -52px) scale(0.9); opacity: 0; }
+}
+.viz-drag { animation: vizDrag 3.8s cubic-bezier(0.6, 0.1, 0.2, 1) infinite; }
+/* landed thumbnail flashes in once the drag completes */
+@keyframes vizLand {
+  0%, 50% { opacity: 0; transform: scale(0.8); }
+  60%     { opacity: 1; transform: scale(1); }
+  86%     { opacity: 1; }
+  92%, 100% { opacity: 0; }
+}
+.viz-land { animation: vizLand 3.8s ease-in-out infinite; }
+/* download / progress bar fill, loop */
+@keyframes vizFill { 0% { width: 0; } 70%, 100% { width: 100%; } }
+.viz-fill { animation: vizFill 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .viz-drag, .viz-land, .viz-fill { animation: none; }
+  .viz-drag { opacity: 1; transform: none; }
+  .viz-fill { width: 100%; }
+}
+
 /* frosted "matte" glass — floating header on scroll */
 .glass {
   background: rgba(10, 10, 11, 0.55);
