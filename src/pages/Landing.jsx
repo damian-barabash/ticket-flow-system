@@ -99,6 +99,7 @@ export default function Landing() {
     ['features', t('landing.features.label')],
     ['compare', t('landing.compare.label')],
     ['pricing', t('landing.pricing.label')],
+    ['app', t('landing.app.label')],
     ['faq', t('landing.faq.label')],
   ]
 
@@ -549,6 +550,31 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ───────────────────────── MOBILE APP */}
+      <Section id="app">
+        <SectionHead label={t('landing.app.label')} title={t('landing.app.title')} sub={t('landing.app.sub')} />
+        <div className="reveal grid items-center gap-12 lg:grid-cols-[1fr_0.85fr]">
+          <div>
+            <ul className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-1.5 inline-block h-2 w-2 shrink-0 bg-accent" />
+                  <span className="text-[15px] leading-relaxed text-muted">{t(`landing.app.p${i}`)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <StoreButton top={t('landing.app.appleTop')} name="App Store" soon={t('landing.app.soon')} icon={<AppleIcon />} />
+              <StoreButton top={t('landing.app.googleTop')} name="Google Play" soon={t('landing.app.soon')} icon={<PlayIcon />} />
+            </div>
+            <p className="mt-4 font-mono uppercase tracking-label text-[10px] text-faint">{t('landing.app.note')}</p>
+          </div>
+          <div className="flex justify-center">
+            <PhoneMockup t={t} />
+          </div>
+        </div>
+      </Section>
+
       {/* ───────────────────────── FOOTER */}
       <footer className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-4 px-5 py-10 sm:flex-row sm:px-8">
         <div className="flex items-center gap-3">
@@ -588,6 +614,90 @@ function Cursor({ className = '' }) {
     <svg width="20" height="20" viewBox="0 0 24 24" className={className} aria-hidden="true">
       <path d="M5 3l14 7-6 2-2 6-6-15z" fill="#EDEDED" stroke="#0A0A0B" strokeWidth="1.2" />
     </svg>
+  )
+}
+
+function AppleIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M16.37 1.43c.09 1-.31 1.97-.93 2.66-.66.74-1.74 1.31-2.79 1.23-.11-.98.36-2 .94-2.62.66-.72 1.81-1.26 2.78-1.27zM19.6 17.2c-.53 1.22-.78 1.76-1.46 2.84-.95 1.51-2.29 3.39-3.95 3.4-1.47.02-1.85-.96-3.85-.95-2 .01-2.42.97-3.89.95-1.66-.01-2.93-1.71-3.88-3.22C-.02 16.02-.3 10.96 1.4 8.27c1.2-1.9 3.1-3.02 4.88-3.02 1.82 0 2.96 1 4.46 1 1.46 0 2.35-1 4.45-1 1.59 0 3.27.86 4.47 2.36-3.93 2.15-3.29 7.76-.06 9.59z" />
+    </svg>
+  )
+}
+
+function PlayIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3.6 2.3 14 12 3.6 21.7c-.36-.2-.6-.6-.6-1.06V3.36c0-.46.24-.86.6-1.06z" fill="#FF2E2E" />
+      <path d="M16.5 9.5 19.9 11.4c.7.4.7 1.4 0 1.8l-3.4 1.9L13.9 12l2.6-2.5z" fill="#E3B341" />
+      <path d="M3.6 2.3 13.9 12l-2.4 2.4L3.6 2.3z" fill="#FF6A6A" opacity="0.9" />
+      <path d="M3.6 21.7 11.5 9.6 13.9 12 3.6 21.7z" fill="#A974FF" opacity="0.9" />
+    </svg>
+  )
+}
+
+// Placeholder store badge (not linked yet — "soon").
+function StoreButton({ top, name, soon, icon }) {
+  return (
+    <div className="group relative flex cursor-default items-center gap-3 border border-line2 bg-surface px-5 py-3">
+      <span className="text-ink">{icon}</span>
+      <span className="flex flex-col leading-tight">
+        <span className="font-mono uppercase tracking-label text-[8px] text-faint">{top}</span>
+        <span className="text-[15px] font-medium text-ink">{name}</span>
+      </span>
+      <span className="ml-1 border border-accent/40 bg-accentSoft px-1.5 py-0.5 font-mono uppercase tracking-label text-[8px] text-accent">
+        {soon}
+      </span>
+    </div>
+  )
+}
+
+// Faux phone showing a mini ticket board — brand-consistent app preview.
+function PhoneMockup({ t }) {
+  const rows = [
+    { n: '014', s: 'new', title: t('landing.hero.demoTitle') },
+    { n: '012', s: 'in_progress', title: t('landing.demo.ticketTitle') },
+    { n: '009', s: 'done', title: t('landing.app.title') },
+  ]
+  return (
+    <div className="float relative">
+      <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[80px] bg-accent/10 blur-[70px]" />
+      <div className="pointer-events-none absolute -inset-8 -z-10 rounded-[80px] bg-legend/10 blur-[80px]" style={{ transform: 'translateX(20px)' }} />
+      <div className="relative w-[264px] rounded-[46px] border border-line2 bg-bg p-3 shadow-[0_45px_100px_-30px_rgba(0,0,0,0.85)]">
+        <div className="absolute left-1/2 top-[18px] z-10 h-5 w-28 -translate-x-1/2 rounded-full bg-line/90" />
+        <div className="dotgrid overflow-hidden rounded-[36px] border border-line bg-surface">
+          <div className="flex items-center justify-between border-b border-line px-4 pb-3 pt-8">
+            <span className="flex items-center gap-2">
+              <LogoMark size={15} />
+              <span className="font-mono uppercase tracking-label text-[9px] text-ink">Ticket Flow</span>
+            </span>
+            <span className="font-mono uppercase tracking-label text-[8px] text-accent">PL</span>
+          </div>
+          <div className="space-y-2.5 p-4">
+            <span className="font-mono uppercase tracking-label text-[8px] text-faint">{t('project.tabActive')}</span>
+            {rows.map((tk, i) => (
+              <div key={i} className="flex overflow-hidden border border-line bg-bg">
+                <span className="w-[3px] shrink-0" style={{ background: STATUS[tk.s].dot }} />
+                <div className="min-w-0 flex-1 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[8px] text-faint">№ {tk.n}</span>
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap" style={{ color: STATUS[tk.s].text }}>
+                      <span className="inline-block h-1 w-1" style={{ background: STATUS[tk.s].dot }} />
+                      <span className="font-mono uppercase tracking-label text-[7px]">{t('enum.status.' + tk.s)}</span>
+                    </span>
+                  </div>
+                  <p className="mt-1 truncate text-[10px] text-ink">{tk.title}</p>
+                </div>
+              </div>
+            ))}
+            <div className="mt-1 flex items-center justify-center gap-1.5 border border-dashed border-line2 py-2 text-faint">
+              <span className="text-[12px]">＋</span>
+              <span className="font-mono uppercase tracking-label text-[8px]">{t('project.newTicket')}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
