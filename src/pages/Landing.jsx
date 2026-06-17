@@ -61,6 +61,7 @@ export default function Landing() {
   const [faqOpen, setFaqOpen] = useState(0)
   const [useCase, setUseCase] = useState(1)
   const [feat, setFeat] = useState(1)
+  const [menuOpen, setMenuOpen] = useState(false)
   // Light theme lives ONLY on the landing (the panel stays dark). Persisted locally.
   const [light, setLight] = useState(() => {
     try {
@@ -77,7 +78,22 @@ export default function Landing() {
     }
   }, [light])
 
-  const go = (path) => navigate(path)
+  // Close the mobile menu on Esc; lock body scroll while it is open.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e) => e.key === 'Escape' && setMenuOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
+
+  const go = (path) => {
+    setMenuOpen(false)
+    navigate(path)
+  }
+  const goSection = (id) => {
+    setMenuOpen(false)
+    scrollTo(id)
+  }
   const navItems = [
     ['useCases', t('landing.useCases.label')],
     ['features', t('landing.features.label')],
@@ -110,23 +126,10 @@ export default function Landing() {
               </button>
             ))}
           </nav>
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button
-              onClick={() => setLight((v) => !v)}
-              aria-label="theme"
-              className="flex h-9 w-9 items-center justify-center border border-line text-muted transition-colors hover:text-ink"
-            >
-              {light ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.6" />
-                  <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              )}
-            </button>
+
+          {/* Desktop: full inline cluster */}
+          <div className="hidden items-center gap-3 md:flex md:gap-4">
+            <ThemeToggle light={light} onToggle={() => setLight((v) => !v)} />
             <LangSwitch />
             {session ? (
               <button onClick={() => go('/projects')} className="btn-accent !px-5 !py-2.5">
@@ -134,7 +137,7 @@ export default function Landing() {
               </button>
             ) : (
               <>
-                <button onClick={() => go('/login')} className="label hidden hover:text-ink transition-colors sm:block">
+                <button onClick={() => go('/login')} className="label hover:text-ink transition-colors">
                   {t('landing.nav.login')}
                 </button>
                 <button onClick={() => go('/register')} className="btn-accent !px-5 !py-2.5">
@@ -143,8 +146,73 @@ export default function Landing() {
               </>
             )}
           </div>
+
+          {/* Mobile: burger button */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={t('topbar.menu')}
+            aria-expanded={menuOpen}
+            className="flex h-10 w-10 items-center justify-center border border-line text-muted transition-colors hover:text-ink md:hidden"
+          >
+            {menuOpen ? (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+                <path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
+            )}
+          </button>
         </div>
         </div>
+
+        {/* Mobile dropdown panel */}
+        {menuOpen && (
+          <div className="md:hidden">
+            <div className="fixed inset-0 top-0 -z-10 bg-black/50" onClick={() => setMenuOpen(false)} />
+            <div className="mx-3 mt-2 rounded-2xl border border-line glass p-4 shadow-[0_18px_50px_-24px_rgba(0,0,0,0.9)]">
+              <nav className="flex flex-col">
+                {navItems.map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => goSection(id)}
+                    className="label py-2.5 text-left hover:text-ink transition-colors"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+
+              <div className="my-3 border-t border-line" />
+
+              <div className="flex items-center justify-between">
+                <span className="label">{t('topbar.lang')}</span>
+                <div className="flex items-center gap-3">
+                  <LangSwitch />
+                  <ThemeToggle light={light} onToggle={() => setLight((v) => !v)} />
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-2">
+                {session ? (
+                  <button onClick={() => go('/projects')} className="btn-accent w-full">
+                    {t('projects.heading')}
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => go('/register')} className="btn-accent w-full">
+                      {t('landing.nav.signup')}
+                    </button>
+                    <button onClick={() => go('/login')} className="btn-ghost w-full">
+                      {t('landing.nav.login')}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </header>
       <div aria-hidden className="h-[72px]" />
 
@@ -490,6 +558,28 @@ export default function Landing() {
         <span className="label">{t('landing.footer.copy')}</span>
       </footer>
     </div>
+  )
+}
+
+// Sun / moon toggle for the landing-only light theme.
+function ThemeToggle({ light, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      aria-label="theme"
+      className="flex h-9 w-9 items-center justify-center border border-line text-muted transition-colors hover:text-ink"
+    >
+      {light ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 12.8A9 9 0 1111.2 3 7 7 0 0021 12.8z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+      )}
+    </button>
   )
 }
 
