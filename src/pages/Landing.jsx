@@ -582,12 +582,16 @@ export default function Landing() {
       </section>
 
       {/* ───────────────────────── FOOTER */}
-      <footer className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-4 px-5 py-10 sm:flex-row sm:px-8">
+      <footer className="mx-auto flex max-w-[1240px] flex-col items-center gap-4 px-5 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-8">
         <div className="flex items-center gap-3">
           <LogoMark size={28} />
           <span className="max-w-[360px] text-xs text-faint">{t('landing.footer.tagline')}</span>
         </div>
-        <span className="label">{t('landing.footer.copy')}</span>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+          <a href="/privacy/" className="label transition-colors hover:text-ink">{t('landing.footer.privacy')}</a>
+          <a href="/refund/" className="label transition-colors hover:text-ink">{t('landing.footer.refund')}</a>
+          <span className="label">{t('landing.footer.copy')}</span>
+        </div>
       </footer>
     </div>
   )

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ticket Flow — Polityka zwrotów / Refund Policy</title>
+  <meta name="robots" content="index, follow" />
+  <style>
+    :root {
+      --bg: #0a0a0b; --surface: #101013; --line: #26262b; --ink: #ededed;
+      --muted: #9a9aa2; --faint: #6a6a72; --accent: #ff2e2e;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: var(--sans); line-height: 1.65; font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 96px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 36px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand .mark {
+      width: 22px; height: 30px; border-radius: 4px 4px 3px 3px; position: relative; flex: none;
+      background: var(--accent);
+    }
+    .brand .mark::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 0;
+      border-left: 1px dashed rgba(0,0,0,.5); transform: translateX(-50%); }
+    .brand b { font-size: 14px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+    .langs { display: flex; gap: 6px; }
+    .langs button {
+      font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      background: transparent; color: var(--muted); border: 1px solid var(--line);
+      padding: 6px 10px; cursor: pointer; transition: .15s;
+    }
+    .langs button:hover { color: var(--ink); }
+    .langs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    h1 { font-size: 28px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 8px; }
+    .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .updated { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-bottom: 32px; }
+    h2 { font-size: 18px; margin: 34px 0 10px; letter-spacing: -.01em; }
+    p, li { color: #cfcfd6; }
+    a { color: var(--accent); }
+    ul { padding-left: 18px; }
+    li { margin: 5px 0; }
+    .box { border: 1px solid var(--line); background: var(--surface); padding: 16px 18px; margin-top: 14px; }
+    .foot { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 18px; font-size: 13px; color: var(--faint); }
+    section[data-lang] { display: none; }
+    section[data-lang].on { display: block; }
+    .label { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="brand"><span class="mark"></span><b>Ticket Flow</b></span>
+      <div class="langs">
+        <button data-set="pl" class="on">PL</button>
+        <button data-set="ru">RU</button>
+        <button data-set="en">EN</button>
+      </div>
+    </header>
+
+    <!-- ============ POLSKI ============ -->
+    <section data-lang="pl" class="on">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Polityka zwrotów</h1>
+      <div class="updated">Ostatnia aktualizacja: 10 lipca 2026</div>
+
+      <p><b>Ticket Flow</b> to usługa cyfrowa w modelu subskrypcji (SaaS). Poniższe zasady określają
+      warunki płatności i zwrotów.</p>
+
+      <div class="box">
+        <span class="label">W skrócie</span>
+        <p style="margin:.4em 0 0">Udostępniamy <b>bezpłatny okres próbny</b>, aby w pełni ocenić usługę
+        przed jakąkolwiek płatnością. Po rozpoczęciu płatnej subskrypcji opłaty są <b>bezzwrotne</b>.</p>
+      </div>
+
+      <h2>1. Okres próbny</h2>
+      <p>Przed pierwszą płatnością możesz przetestować pełną funkcjonalność w ramach bezpłatnego okresu
+      próbnego. To Twój moment na sprawdzenie, czy usługa Ci odpowiada.</p>
+
+      <h2>2. Subskrypcje są bezzwrotne</h2>
+      <p>Subskrypcja jest płatna z góry za dany okres rozliczeniowy (miesiąc lub rok). Po dokonaniu płatności
+      opłaty nie podlegają zwrotowi — również częściowemu — w tym za niewykorzystany czas.</p>
+
+      <h2>3. Anulowanie</h2>
+      <p>Subskrypcję możesz anulować w dowolnym momencie. Zachowasz dostęp do końca opłaconego okresu, a
+      kolejne odnowienie nie zostanie naliczone. Nie zwracamy opłaty za bieżący, już opłacony okres.</p>
+
+      <h2>4. Odnowienia</h2>
+      <p>Subskrypcja odnawia się automatycznie. Aby uniknąć kolejnej opłaty, anuluj przed datą odnowienia.
+      Opłaty już naliczone (w tym po odnowieniu) są bezzwrotne.</p>
+
+      <h2>5. Brak zwrotów za zmianę zdania</h2>
+      <p>Nie udzielamy zwrotów za brak korzystania z usługi, zmianę zdania czy po rozpoczęciu opłaconego
+      okresu.</p>
+
+      <h2>6. Wyjątki</h2>
+      <p>Zwrot rozpatrzymy wyłącznie tam, gdzie wymagają tego bezwzględnie obowiązujące przepisy, oraz w
+      przypadku faktycznych błędów płatności (np. podwójne obciążenie) — wystarczy się z nami skontaktować.
+      Rozpoczynając płatną subskrypcję, prosisz o natychmiastowe udostępnienie usługi cyfrowej i przyjmujesz
+      do wiadomości, że po jej rozpoczęciu tracisz ustawowe prawo odstąpienia. Usługa jest kierowana głównie
+      do klientów biznesowych.</p>
+
+      <h2>7. Kontakt</h2>
+      <p>Pytania dotyczące płatności: <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>.</p>
+
+      <div class="foot">Ticket Flow · część ekosystemu dbdc studio · kontakt: office@barabashflow.pl</div>
+    </section>
+
+    <!-- ============ РУССКИЙ ============ -->
+    <section data-lang="ru">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Политика возвратов</h1>
+      <div class="updated">Последнее обновление: 10 июля 2026</div>
+
+      <p><b>Ticket Flow</b> — это цифровой сервис по подписке (SaaS). Ниже описаны условия оплаты и возвратов.</p>
+
+      <div class="box">
+        <span class="label">Коротко</span>
+        <p style="margin:.4em 0 0">Мы даём <b>бесплатный пробный период</b>, чтобы вы полностью оценили сервис
+        до любой оплаты. После начала платной подписки оплата <b>возврату не подлежит</b>.</p>
+      </div>
+
+      <h2>1. Пробный период</h2>
+      <p>До первой оплаты вы можете протестировать всю функциональность в рамках бесплатного пробного
+      периода. Это ваш момент убедиться, что сервис вам подходит.</p>
+
+      <h2>2. Подписки возврату не подлежат</h2>
+      <p>Подписка оплачивается заранее за расчётный период (месяц или год). После оплаты средства не
+      возвращаются — в том числе частично и за неиспользованное время.</p>
+
+      <h2>3. Отмена</h2>
+      <p>Вы можете отменить подписку в любой момент. Доступ сохранится до конца оплаченного периода, а
+      следующее продление не спишется. Оплату за текущий, уже оплаченный период мы не возвращаем.</p>
+
+      <h2>4. Продления</h2>
+      <p>Подписка продлевается автоматически. Чтобы избежать следующего списания, отмените до даты продления.
+      Уже списанные средства (в том числе после продления) возврату не подлежат.</p>
+
+      <h2>5. Нет возвратов за передумал</h2>
+      <p>Мы не возвращаем оплату за то, что сервис не использовался, за изменение решения или после начала
+      оплаченного периода.</p>
+
+      <h2>6. Исключения</h2>
+      <p>Возврат рассматривается только там, где этого требует императивное законодательство, и в случае
+      реальных ошибок оплаты (например, двойное списание) — просто свяжитесь с нами. Начиная платную
+      подписку, вы просите о немедленном предоставлении цифровой услуги и признаёте, что после её начала
+      теряете установленное законом право на отказ. Сервис ориентирован преимущественно на бизнес-клиентов.</p>
+
+      <h2>7. Контакт</h2>
+      <p>Вопросы по оплате: <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>.</p>
+
+      <div class="foot">Ticket Flow · часть экосистемы dbdc studio · контакт: office@barabashflow.pl</div>
+    </section>
+
+    <!-- ============ ENGLISH ============ -->
+    <section data-lang="en">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Refund Policy</h1>
+      <div class="updated">Last updated: 10 July 2026</div>
+
+      <p><b>Ticket Flow</b> is a subscription (SaaS) digital service. The following terms cover payments and refunds.</p>
+
+      <div class="box">
+        <span class="label">In short</span>
+        <p style="margin:.4em 0 0">We provide a <b>free trial</b> so you can fully evaluate the service before
+        any payment. Once a paid subscription starts, fees are <b>non-refundable</b>.</p>
+      </div>
+
+      <h2>1. Free trial</h2>
+      <p>Before your first payment you can test the full functionality during a free trial. This is your
+      chance to confirm the service fits your needs.</p>
+
+      <h2>2. Subscriptions are non-refundable</h2>
+      <p>The subscription is billed in advance for a billing period (monthly or yearly). Once paid, fees are
+      non-refundable — including partial refunds and refunds for unused time.</p>
+
+      <h2>3. Cancellation</h2>
+      <p>You can cancel at any time. You keep access until the end of the paid period, and the next renewal
+      will not be charged. We do not refund the current, already-paid period.</p>
+
+      <h2>4. Renewals</h2>
+      <p>The subscription renews automatically. To avoid the next charge, cancel before the renewal date.
+      Charges already made (including after renewal) are non-refundable.</p>
+
+      <h2>5. No refunds for change of mind</h2>
+      <p>We do not issue refunds for non-use of the service, a change of mind, or after a paid period has
+      started.</p>
+
+      <h2>6. Exceptions</h2>
+      <p>We will consider a refund only where mandatory law requires it, and in the case of genuine billing
+      errors (e.g. a duplicate charge) — just contact us. By starting a paid subscription you request
+      immediate provision of the digital service and acknowledge that once it begins you lose the statutory
+      right of withdrawal. The service is aimed primarily at business customers.</p>
+
+      <h2>7. Contact</h2>
+      <p>Billing questions: <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>.</p>
+
+      <div class="foot">Ticket Flow · part of the dbdc studio ecosystem · contact: office@barabashflow.pl</div>
+    </section>
+  </div>
+
+  <script>
+    var btns = document.querySelectorAll('.langs button');
+    var secs = document.querySelectorAll('section[data-lang]');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var l = b.getAttribute('data-set');
+        btns.forEach(function (x) { x.classList.toggle('on', x === b); });
+        secs.forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-lang') === l); });
+        document.documentElement.lang = l;
+      });
+    });
+  </script>
+</body>
+</html>

@@ -428,7 +428,9 @@ const DICT = {
       },
       footer: {
         tagline: 'Тикет-система для работы с клиентами и для внутренних задач команды.',
-        copy: '© MMXXVI Ticket Flow · barabashflow.pl',
+        copy: '© MMXXVI Ticket Flow · часть экосистемы dbdc studio',
+        privacy: 'Политика конфиденциальности',
+        refund: 'Политика возвратов',
       },
     },
     tour: {
@@ -879,7 +881,9 @@ const DICT = {
       },
       footer: {
         tagline: 'System zgłoszeń do pracy z klientami i do zadań wewnątrz zespołu.',
-        copy: '© MMXXVI Ticket Flow · barabashflow.pl',
+        copy: '© MMXXVI Ticket Flow · część ekosystemu dbdc studio',
+        privacy: 'Polityka prywatności',
+        refund: 'Polityka zwrotów',
       },
     },
     tour: {
@@ -1330,7 +1334,9 @@ const DICT = {
       },
       footer: {
         tagline: 'A ticket system for client work and internal team tasks.',
-        copy: '© MMXXVI Ticket Flow · barabashflow.pl',
+        copy: '© MMXXVI Ticket Flow · part of the dbdc studio ecosystem',
+        privacy: 'Privacy Policy',
+        refund: 'Refund Policy',
       },
     },
     tour: {

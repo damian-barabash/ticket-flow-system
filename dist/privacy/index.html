@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ticket Flow — Polityka prywatności / Privacy Policy</title>
+  <meta name="robots" content="index, follow" />
+  <style>
+    :root {
+      --bg: #0a0a0b; --surface: #101013; --line: #26262b; --ink: #ededed;
+      --muted: #9a9aa2; --faint: #6a6a72; --accent: #ff2e2e;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: var(--sans); line-height: 1.65; font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 96px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 36px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand .mark {
+      width: 22px; height: 30px; border-radius: 4px 4px 3px 3px; position: relative; flex: none;
+      background: var(--accent);
+    }
+    .brand .mark::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 0;
+      border-left: 1px dashed rgba(0,0,0,.5); transform: translateX(-50%); }
+    .brand b { font-size: 14px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+    .langs { display: flex; gap: 6px; }
+    .langs button {
+      font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      background: transparent; color: var(--muted); border: 1px solid var(--line);
+      padding: 6px 10px; cursor: pointer; transition: .15s;
+    }
+    .langs button:hover { color: var(--ink); }
+    .langs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    h1 { font-size: 28px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 8px; }
+    .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .updated { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-bottom: 32px; }
+    h2 { font-size: 18px; margin: 34px 0 10px; letter-spacing: -.01em; }
+    p, li { color: #cfcfd6; }
+    a { color: var(--accent); }
+    ul { padding-left: 18px; }
+    li { margin: 5px 0; }
+    .box { border: 1px solid var(--line); background: var(--surface); padding: 16px 18px; margin-top: 14px; }
+    .foot { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 18px; font-size: 13px; color: var(--faint); }
+    section[data-lang] { display: none; }
+    section[data-lang].on { display: block; }
+    .label { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="brand"><span class="mark"></span><b>Ticket Flow</b></span>
+      <div class="langs">
+        <button data-set="pl" class="on">PL</button>
+        <button data-set="ru">RU</button>
+        <button data-set="en">EN</button>
+      </div>
+    </header>
+
+    <!-- ============ POLSKI ============ -->
+    <section data-lang="pl" class="on">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Polityka prywatności</h1>
+      <div class="updated">Ostatnia aktualizacja: 10 lipca 2026</div>
+
+      <p>Niniejsza polityka opisuje, jakie dane przetwarza aplikacja i serwis <b>Ticket Flow</b>
+      (dalej „Aplikacja”, dostępna pod adresem ticketflow.pl oraz w App Store i Google Play)
+      oraz jakie masz prawa. Aplikacja to narzędzie do prowadzenia zgłoszeń i zadań między
+      wykonawcą a klientem.</p>
+
+      <div class="box">
+        <span class="label">Administrator danych</span>
+        <p style="margin:.4em 0 0">Aplikacja jest prowadzona przez niezależnego twórcę (dbdc studio).
+        Kontakt w sprawach prywatności: <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>.</p>
+      </div>
+
+      <h2>Jakie dane zbieramy</h2>
+      <ul>
+        <li><b>Dane konta:</b> adres e-mail, nazwa użytkownika, hasło (przechowywane w postaci zaszyfrowanej), wybrany język, rola w systemie.</li>
+        <li><b>Treści, które tworzysz:</b> projekty, zgłoszenia (tytuł, opis, status, priorytet, termin), komentarze, przesłane zdjęcia i pliki, cele i wersje projektu.</li>
+        <li><b>Dane techniczne:</b> tokeny sesji/logowania, znaczniki czasu oraz podstawowe logi niezbędne do działania i bezpieczeństwa usługi.</li>
+      </ul>
+      <p>Nie zbieramy danych o lokalizacji, nie korzystamy z reklam ani z zewnętrznych narzędzi
+      analitycznych/śledzących (brak SDK typu Google Analytics, Facebook itp.).</p>
+
+      <h2>W jakim celu i na jakiej podstawie</h2>
+      <ul>
+        <li>Świadczenie usługi (konto, zgłoszenia, powiadomienia) — wykonanie umowy (art. 6 ust. 1 lit. b RODO).</li>
+        <li>Bezpieczeństwo, zapobieganie nadużyciom, logi — prawnie uzasadniony interes (art. 6 ust. 1 lit. f RODO).</li>
+      </ul>
+
+      <h2>Komu powierzamy dane (podmioty przetwarzające)</h2>
+      <ul>
+        <li><b>Supabase</b> — hosting bazy danych, uwierzytelnianie i przechowywanie plików (serwery w UE, Frankfurt).</li>
+        <li><b>Resend</b> — wysyłka wiadomości e-mail (powiadomienia).</li>
+        <li><b>Apple App Store / Google Play</b> — dystrybucja aplikacji.</li>
+      </ul>
+
+      <h2>Jak długo przechowujemy dane</h2>
+      <p>Dane przechowujemy tak długo, jak istnieje Twoje konto. Po usunięciu konta dane są kasowane,
+      z wyjątkiem informacji, które musimy zachować ze względów prawnych lub bezpieczeństwa.</p>
+
+      <h2>Usunięcie konta i danych</h2>
+      <p>W każdej chwili możesz zażądać usunięcia konta i wszystkich powiązanych danych, pisząc na
+      <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>. Realizujemy takie żądania bez zbędnej zwłoki.</p>
+
+      <h2>Twoje prawa</h2>
+      <p>Masz prawo do: dostępu do danych, sprostowania, usunięcia, ograniczenia przetwarzania,
+      przenoszenia danych oraz sprzeciwu. Możesz też wnieść skargę do organu nadzorczego
+      (w Polsce: Prezes UODO).</p>
+
+      <h2>Bezpieczeństwo</h2>
+      <p>Połączenia są szyfrowane (HTTPS/TLS), hasła przechowywane w postaci skrótu, a dostęp do treści
+      chroniony jest regułami dostępu po stronie serwera (każdy widzi tylko swoje projekty).</p>
+
+      <h2>Dzieci</h2>
+      <p>Aplikacja nie jest przeznaczona dla osób poniżej 16. roku życia i nie zbieramy świadomie ich danych.</p>
+
+      <h2>Zmiany polityki</h2>
+      <p>Możemy aktualizować tę politykę. Nowa wersja obowiązuje od dnia publikacji na tej stronie.</p>
+
+      <div class="foot">Ticket Flow · część ekosystemu dbdc studio · kontakt: office@barabashflow.pl</div>
+    </section>
+
+    <!-- ============ РУССКИЙ ============ -->
+    <section data-lang="ru">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Политика конфиденциальности</h1>
+      <div class="updated">Последнее обновление: 10 июля 2026</div>
+
+      <p>Эта политика описывает, какие данные обрабатывает приложение и сервис <b>Ticket Flow</b>
+      (далее «Приложение», доступно по адресу ticketflow.pl, а также в App Store и Google Play)
+      и какие у вас есть права. Приложение — это инструмент для ведения тикетов и задач между
+      исполнителем и клиентом.</p>
+
+      <div class="box">
+        <span class="label">Оператор данных</span>
+        <p style="margin:.4em 0 0">Приложение ведёт независимый разработчик (dbdc studio).
+        Контакт по вопросам конфиденциальности: <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>.</p>
+      </div>
+
+      <h2>Какие данные мы собираем</h2>
+      <ul>
+        <li><b>Данные аккаунта:</b> email, имя пользователя, пароль (хранится в зашифрованном виде), выбранный язык, роль в системе.</li>
+        <li><b>Контент, который вы создаёте:</b> проекты, тикеты (заголовок, описание, статус, приоритет, дедлайн), комментарии, загруженные фото и файлы, цели и версии проекта.</li>
+        <li><b>Технические данные:</b> токены сессии/входа, метки времени и базовые логи, необходимые для работы и безопасности сервиса.</li>
+      </ul>
+      <p>Мы не собираем данные о геолокации, не используем рекламу и сторонние аналитические/трекинговые
+      инструменты (нет SDK вроде Google Analytics, Facebook и т.п.).</p>
+
+      <h2>Цели и правовые основания</h2>
+      <ul>
+        <li>Предоставление сервиса (аккаунт, тикеты, уведомления) — исполнение договора (ст. 6(1)(b) GDPR).</li>
+        <li>Безопасность, предотвращение злоупотреблений, логи — законный интерес (ст. 6(1)(f) GDPR).</li>
+      </ul>
+
+      <h2>Кому мы передаём данные (обработчики)</h2>
+      <ul>
+        <li><b>Supabase</b> — хостинг базы данных, аутентификация и хранение файлов (серверы в ЕС, Франкфурт).</li>
+        <li><b>Resend</b> — отправка email (уведомления).</li>
+        <li><b>Apple App Store / Google Play</b> — распространение приложения.</li>
+      </ul>
+
+      <h2>Сколько мы храним данные</h2>
+      <p>Данные хранятся, пока существует ваш аккаунт. После удаления аккаунта данные удаляются, за
+      исключением того, что мы обязаны сохранить по юридическим причинам или для безопасности.</p>
+
+      <h2>Удаление аккаунта и данных</h2>
+      <p>Вы можете в любой момент запросить удаление аккаунта и всех связанных данных, написав на
+      <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>. Мы выполняем такие запросы без необоснованной задержки.</p>
+
+      <h2>Ваши права</h2>
+      <p>У вас есть право на: доступ к данным, исправление, удаление, ограничение обработки,
+      переносимость данных и возражение. Вы также можете подать жалобу в надзорный орган
+      (в Польше: Prezes UODO).</p>
+
+      <h2>Безопасность</h2>
+      <p>Соединения шифруются (HTTPS/TLS), пароли хранятся в виде хэша, а доступ к контенту защищён
+      правилами доступа на стороне сервера (каждый видит только свои проекты).</p>
+
+      <h2>Дети</h2>
+      <p>Приложение не предназначено для лиц младше 16 лет, и мы сознательно не собираем их данные.</p>
+
+      <h2>Изменения политики</h2>
+      <p>Мы можем обновлять эту политику. Новая версия действует с момента публикации на этой странице.</p>
+
+      <div class="foot">Ticket Flow · часть экосистемы dbdc studio · контакт: office@barabashflow.pl</div>
+    </section>
+
+    <!-- ============ ENGLISH ============ -->
+    <section data-lang="en">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Privacy Policy</h1>
+      <div class="updated">Last updated: 10 July 2026</div>
+
+      <p>This policy explains what data the <b>Ticket Flow</b> app and service
+      (the “App”, available at ticketflow.pl and on the App Store and Google Play)
+      processes and what rights you have. The App is a tool for managing tickets and tasks
+      between a provider and a client.</p>
+
+      <div class="box">
+        <span class="label">Data controller</span>
+        <p style="margin:.4em 0 0">The App is operated by an independent developer (dbdc studio).
+        Privacy contact: <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>.</p>
+      </div>
+
+      <h2>Data we collect</h2>
+      <ul>
+        <li><b>Account data:</b> email address, user name, password (stored in encrypted/hashed form), chosen language, role.</li>
+        <li><b>Content you create:</b> projects, tickets (title, description, status, priority, deadline), comments, uploaded photos and files, goals and project releases.</li>
+        <li><b>Technical data:</b> session/login tokens, timestamps and basic logs needed to run and secure the service.</li>
+      </ul>
+      <p>We do not collect location data, do not use advertising, and do not use third-party
+      analytics or tracking SDKs (no Google Analytics, Facebook, etc.).</p>
+
+      <h2>Purpose and legal basis</h2>
+      <ul>
+        <li>Providing the service (account, tickets, notifications) — performance of a contract (Art. 6(1)(b) GDPR).</li>
+        <li>Security, abuse prevention, logging — legitimate interest (Art. 6(1)(f) GDPR).</li>
+      </ul>
+
+      <h2>Who we share data with (processors)</h2>
+      <ul>
+        <li><b>Supabase</b> — database hosting, authentication and file storage (EU servers, Frankfurt).</li>
+        <li><b>Resend</b> — sending emails (notifications).</li>
+        <li><b>Apple App Store / Google Play</b> — app distribution.</li>
+      </ul>
+
+      <h2>How long we keep data</h2>
+      <p>We keep data for as long as your account exists. After account deletion, data is erased,
+      except information we must retain for legal or security reasons.</p>
+
+      <h2>Account and data deletion</h2>
+      <p>You can request deletion of your account and all associated data at any time by emailing
+      <a href="mailto:office@barabashflow.pl">office@barabashflow.pl</a>. We handle such requests without undue delay.</p>
+
+      <h2>Your rights</h2>
+      <p>You have the right to access, rectify, erase, restrict processing, port your data, and object.
+      You may also lodge a complaint with a supervisory authority (in Poland: the President of UODO).</p>
+
+      <h2>Security</h2>
+      <p>Connections are encrypted (HTTPS/TLS), passwords are stored hashed, and access to content is
+      protected by server-side access rules (each user sees only their own projects).</p>
+
+      <h2>Children</h2>
+      <p>The App is not intended for people under 16, and we do not knowingly collect their data.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>We may update this policy. The new version takes effect when published on this page.</p>
+
+      <div class="foot">Ticket Flow · part of the dbdc studio ecosystem · contact: office@barabashflow.pl</div>
+    </section>
+  </div>
+
+  <script>
+    var btns = document.querySelectorAll('.langs button');
+    var secs = document.querySelectorAll('section[data-lang]');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var l = b.getAttribute('data-set');
+        btns.forEach(function (x) { x.classList.toggle('on', x === b); });
+        secs.forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-lang') === l); });
+        document.documentElement.lang = l;
+      });
+    });
+  </script>
+</body>
+</html>
