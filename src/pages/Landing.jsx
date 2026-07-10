@@ -95,11 +95,11 @@ export default function Landing() {
     scrollTo(id)
   }
   const navItems = [
+    ['app', t('landing.app.label')],
     ['useCases', t('landing.useCases.label')],
     ['features', t('landing.features.label')],
     ['compare', t('landing.compare.label')],
     ['pricing', t('landing.pricing.label')],
-    ['app', t('landing.app.label')],
     ['faq', t('landing.faq.label')],
   ]
 
@@ -275,6 +275,31 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ───────────────────────── MOBILE APP */}
+      <Section id="app">
+        <SectionHead label={t('landing.app.label')} title={t('landing.app.title')} sub={t('landing.app.sub')} />
+        <div className="reveal grid items-center gap-12 lg:grid-cols-[1fr_0.85fr]">
+          <div>
+            <ul className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <span className="mt-1.5 inline-block h-2 w-2 shrink-0 bg-accent" />
+                  <span className="text-[15px] leading-relaxed text-muted">{t(`landing.app.p${i}`)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8 flex flex-wrap items-center gap-3">
+              <StoreBadge src="./appstore-badge.svg" alt="App Store" soon={t('landing.app.soon')} />
+              <StoreBadge src="./googleplay-badge.png" alt="Google Play" soon={t('landing.app.soon')} />
+            </div>
+            <p className="mt-4 font-mono uppercase tracking-label text-[10px] text-faint">{t('landing.app.note')}</p>
+          </div>
+          <div className="flex justify-center">
+            <PhoneMockup t={t} />
+          </div>
+        </div>
+      </Section>
+
       {/* ───────────────────────── USE CASES (interactive) */}
       <Section id="useCases">
         <SectionHead label={t('landing.useCases.label')} title={t('landing.useCases.title')} sub={t('landing.useCases.sub')} />
@@ -317,6 +342,12 @@ export default function Landing() {
               <p className="mt-2 text-sm leading-relaxed text-faint">{t(`landing.problem.p${i}d`)}</p>
             </div>
           ))}
+        </div>
+
+        {/* CTA under the problem cards */}
+        <div className="reveal mt-8 flex flex-col items-center gap-5 border border-accent/40 bg-accentSoft px-6 py-10 text-center">
+          <p className="max-w-[560px] text-lg font-medium leading-snug text-ink">{t('landing.problem.ctaText')}</p>
+          <button onClick={() => go('/register')} className="btn-accent">{t('landing.problem.ctaBtn')}</button>
         </div>
       </Section>
 
@@ -369,7 +400,7 @@ export default function Landing() {
 
       {/* ───────────────────────── FEATURES (interactive selector) */}
       <Section id="features">
-        <SectionHead label={t('landing.features.label')} title={t('landing.features.title')} />
+        <SectionHead label={t('landing.features.label')} title={t('landing.features.title')} sub={t('landing.features.sub')} />
         <div className="reveal grid gap-5 lg:grid-cols-[1fr_1.1fr]">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-1">
             {[1, 2, 3, 4, 5, 6].map((i) => {
@@ -549,31 +580,6 @@ export default function Landing() {
           </div>
         </div>
       </section>
-
-      {/* ───────────────────────── MOBILE APP */}
-      <Section id="app">
-        <SectionHead label={t('landing.app.label')} title={t('landing.app.title')} sub={t('landing.app.sub')} />
-        <div className="reveal grid items-center gap-12 lg:grid-cols-[1fr_0.85fr]">
-          <div>
-            <ul className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <span className="mt-1.5 inline-block h-2 w-2 shrink-0 bg-accent" />
-                  <span className="text-[15px] leading-relaxed text-muted">{t(`landing.app.p${i}`)}</span>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <StoreBadge src="./appstore-badge.svg" alt="App Store" soon={t('landing.app.soon')} />
-              <StoreBadge src="./googleplay-badge.png" alt="Google Play" soon={t('landing.app.soon')} />
-            </div>
-            <p className="mt-4 font-mono uppercase tracking-label text-[10px] text-faint">{t('landing.app.note')}</p>
-          </div>
-          <div className="flex justify-center">
-            <PhoneMockup t={t} />
-          </div>
-        </div>
-      </Section>
 
       {/* ───────────────────────── FOOTER */}
       <footer className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-4 px-5 py-10 sm:flex-row sm:px-8">
