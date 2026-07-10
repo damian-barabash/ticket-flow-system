@@ -4,11 +4,28 @@ import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { notify } from '../lib/notify'
 import { STATUS, STATUS_ORDER, PRIORITY, PRIORITY_ORDER } from '../lib/constants'
-import { formatDate, timeAgo } from '../lib/format'
-import { Spinner, Avatar, StatusBadge } from './ui'
+import { formatDate, formatDay, timeAgo } from '../lib/format'
+import { Spinner, Avatar, StatusBadge, IconTrash } from './ui'
 import { Lightbox } from './Lightbox'
 import { Thumb } from './Thumb'
 import { isImageFile, imageExt, imageContentType } from '../lib/files'
+
+// whole days between today (local) and a 'YYYY-MM-DD' date (negative = overdue)
+function daysUntil(dateStr) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number)
+  return Math.round((new Date(y, m - 1, d) - today) / 86400000)
+}
+
+// deadline color by urgency (grey once done / unset)
+function dueColor(ticket) {
+  if (ticket.status === 'done' || !ticket.due_date) return '#8A8A92'
+  const n = daysUntil(ticket.due_date)
+  if (n < 0) return '#FF2E2E'
+  if (n <= 2) return '#E3B341'
+  return '#A974FF'
+}
 
 export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const { user, isStaff } = useAuth()
@@ -33,6 +50,17 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
   const scrollRef = useRef(null)
   const fileRef = useRef(null)
   const addPhotoRef = useRef(null)
+
+  // slide-in / slide-out animation. Parent unmounts us, so we animate out first.
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+  const requestClose = useCallback(() => {
+    setVisible(false)
+    setTimeout(() => onClose?.(), 260)
+  }, [onClose])
 
   const markRead = useCallback(async () => {
     await supabase
@@ -171,6 +199,19 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
     onChanged?.()
   }
 
+  // optional deadline date on the ticket (staff only). '' clears it.
+  async function setDue(value) {
+    if (!isStaff) return
+    const due = value || null
+    const { error } = await supabase.from('tickets').update({ due_date: due }).eq('id', ticketId)
+    if (error) {
+      alert(error.message || error)
+      return
+    }
+    onChanged?.()
+    load()
+  }
+
   function addFiles(list) {
     const imgs = Array.from(list || []).filter(isImageFile)
     if (imgs.length) setFiles((p) => [...p, ...imgs.map((f) => ({ file: f, url: URL.createObjectURL(f) }))])
@@ -242,7 +283,7 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
       const { error } = await supabase.from('tickets').delete().eq('id', ticketId)
       if (error) throw error
       onChanged?.()
-      onClose()
+      requestClose()
     } catch (err) {
       alert(t('ticket.errDeleteTicket') + (err.message || err))
       setDeleting(false)
@@ -285,9 +326,16 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
 
   return (
    <>
-    <div className="fixed inset-0 z-[60] flex justify-end bg-black/60 backdrop-blur-sm" onMouseDown={onClose}>
+    <div
+      className={`fixed inset-0 z-[60] flex justify-end transition-colors duration-300 ${
+        visible ? 'bg-black/60 backdrop-blur-sm' : 'bg-transparent'
+      }`}
+      onMouseDown={requestClose}
+    >
       <aside
-        className="flex h-full w-full max-w-[560px] flex-col border-l border-line bg-bg"
+        className={`flex h-full w-full max-w-[560px] flex-col border-l border-line bg-bg shadow-[0_0_60px_-10px_rgba(0,0,0,0.9)] transition-transform duration-300 ease-out ${
+          visible ? 'translate-x-0' : 'translate-x-full'
+        }`}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {loading || !ticket ? (
@@ -322,14 +370,18 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     <button
                       onClick={deleteTicket}
                       disabled={deleting}
-                      className="px-1.5 text-faint transition-colors hover:text-accent disabled:opacity-50"
+                      className="flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-accent disabled:opacity-50"
                       title={t('ticket.deleteTicket')}
                       aria-label={t('ticket.deleteTicket')}
                     >
-                      {deleting ? <Spinner className="h-3.5 w-3.5" /> : '🗑'}
+                      {deleting ? <Spinner className="h-3.5 w-3.5" /> : <IconTrash size={17} />}
                     </button>
                   )}
-                  <button onClick={onClose} className="px-1.5 text-faint hover:text-ink" aria-label={t('common.close')}>
+                  <button
+                    onClick={requestClose}
+                    className="flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-ink"
+                    aria-label={t('common.close')}
+                  >
                     ✕
                   </button>
                 </div>
@@ -443,6 +495,23 @@ export function TicketDrawer({ ticketId, members, onClose, onChanged }) {
                     <Avatar name={profiles[ticket.created_by]?.full_name} email={profiles[ticket.created_by]?.email} size={20} />
                     {profiles[ticket.created_by]?.full_name || profiles[ticket.created_by]?.email || '—'}
                   </span>
+                </div>
+                <div>
+                  <span className="label mb-1.5 block">{t('ticket.deadline')}</span>
+                  {isStaff ? (
+                    <input
+                      type="date"
+                      value={ticket.due_date ? String(ticket.due_date).slice(0, 10) : ''}
+                      onChange={(e) => setDue(e.target.value)}
+                      className="field [color-scheme:dark] px-2 py-1 text-xs"
+                    />
+                  ) : ticket.due_date ? (
+                    <span className="font-mono text-[11px]" style={{ color: dueColor(ticket) }}>
+                      {formatDay(ticket.due_date)}
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[11px] text-faint">{t('ticket.dueNone')}</span>
+                  )}
                 </div>
               </div>
             </div>

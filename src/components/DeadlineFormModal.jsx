@@ -4,12 +4,14 @@ import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { Modal, Spinner } from './ui'
 
-// Add a single goal + deadline to a project. Available to admins and project members.
-export function DeadlineFormModal({ open, onClose, onSaved, projectId }) {
+// Add or edit a single goal + deadline. Available to admins and project members.
+// Pass `item` (an existing project_deadlines row) to edit it instead of creating.
+export function DeadlineFormModal({ open, onClose, onSaved, projectId, item = null }) {
   const { user } = useAuth()
   const { t } = useT()
-  const [title, setTitle] = useState('')
-  const [deadline, setDeadline] = useState('')
+  const editing = !!item
+  const [title, setTitle] = useState(item?.title ?? '')
+  const [deadline, setDeadline] = useState(item?.deadline ? String(item.deadline).slice(0, 10) : '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -21,13 +23,21 @@ export function DeadlineFormModal({ open, onClose, onSaved, projectId }) {
     setError('')
     setBusy(true)
     try {
-      const { error: insErr } = await supabase.from('project_deadlines').insert({
-        project_id: projectId,
-        title: title.trim(),
-        deadline, // 'YYYY-MM-DD'
-        created_by: user.id,
-      })
-      if (insErr) throw insErr
+      if (editing) {
+        const { error: updErr } = await supabase
+          .from('project_deadlines')
+          .update({ title: title.trim(), deadline })
+          .eq('id', item.id)
+        if (updErr) throw updErr
+      } else {
+        const { error: insErr } = await supabase.from('project_deadlines').insert({
+          project_id: projectId,
+          title: title.trim(),
+          deadline, // 'YYYY-MM-DD'
+          created_by: user.id,
+        })
+        if (insErr) throw insErr
+      }
       onSaved?.()
       onClose()
     } catch (err) {
@@ -38,7 +48,7 @@ export function DeadlineFormModal({ open, onClose, onSaved, projectId }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('deadlineForm.title')}>
+    <Modal open={open} onClose={onClose} title={editing ? t('deadlineForm.editTitle') : t('deadlineForm.title')}>
       <form onSubmit={onSubmit}>
         <div className="mb-5">
           <label className="label mb-2 block">{t('deadlineForm.goal')}</label>
@@ -70,7 +80,7 @@ export function DeadlineFormModal({ open, onClose, onSaved, projectId }) {
             {t('common.cancel')}
           </button>
           <button type="submit" disabled={busy || !canSave} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('common.add')}
+            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : editing ? t('common.save') : t('common.add')}
           </button>
         </div>
       </form>

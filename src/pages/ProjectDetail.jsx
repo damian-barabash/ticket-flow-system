@@ -4,10 +4,11 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
-import { Spinner, EmptyState } from '../components/ui'
+import { Spinner, EmptyState, IconCalendar } from '../components/ui'
 import { TicketCard } from '../components/TicketCard'
 import { CreateTicketModal } from '../components/CreateTicketModal'
 import { TicketDrawer } from '../components/TicketDrawer'
+import { CalendarModal } from '../components/CalendarModal'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { ManageMembersModal } from '../components/ManageMembersModal'
 import { ReleasesBlock } from '../components/ReleasesBlock'
@@ -60,6 +61,7 @@ export default function ProjectDetail() {
   const [showCreate, setShowCreate] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [showMembers, setShowMembers] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
 
   // "By version" only makes sense on the Done tab (fixed_version). Available to admin & client.
   const SORTS = [
@@ -239,6 +241,10 @@ export default function ProjectDetail() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
+                <button onClick={() => setShowCalendar(true)} className="btn-ghost flex items-center gap-2">
+                  <IconCalendar size={15} />
+                  {t('project.calendar')}
+                </button>
                 {isStaff && (
                   <>
                     <button onClick={() => setShowMembers(true)} className="btn-ghost" data-tour="members">
@@ -429,6 +435,16 @@ export default function ProjectDetail() {
       )}
       {isStaff && showMembers && (
         <ManageMembersModal open={showMembers} onClose={() => setShowMembers(false)} projectId={id} />
+      )}
+      {showCalendar && (
+        <CalendarModal
+          projectId={id}
+          onClose={() => setShowCalendar(false)}
+          onOpenTicket={(tid) => {
+            setShowCalendar(false)
+            setOpenTicket(tid)
+          }}
+        />
       )}
 
       {!loading && project && (

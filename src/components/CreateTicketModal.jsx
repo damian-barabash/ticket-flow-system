@@ -14,6 +14,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState('change')
   const [priority, setPriority] = useState('medium')
+  const [dueDate, setDueDate] = useState('')
   const [isTask, setIsTask] = useState(false)
   const [files, setFiles] = useState([])
   const [busy, setBusy] = useState(false)
@@ -26,6 +27,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
     setDescription('')
     setCategory('change')
     setPriority('medium')
+    setDueDate('')
     setIsTask(false)
     setFiles([])
     setError('')
@@ -57,6 +59,7 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
           description: description.trim() || null,
           category,
           priority,
+          due_date: dueDate || null,
           is_task: isTask,
           created_by: user.id,
         })
@@ -139,6 +142,17 @@ export function CreateTicketModal({ open, onClose, projectId, onCreated }) {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* optional deadline — tickets with a date show up on the project calendar */}
+        <div className="mb-5">
+          <label className="label mb-2 block">{t('createTicket.deadline')}</label>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="field [color-scheme:dark] w-full sm:w-56"
+          />
         </div>
 
         {/* turn this ticket into a task: admin → assigned to project clients; client → personal task for self */}

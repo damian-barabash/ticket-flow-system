@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { formatDay } from '../lib/format'
-import { Spinner } from './ui'
+import { Spinner, IconPencil, IconTrash } from './ui'
 import { DeadlineFormModal } from './DeadlineFormModal'
 
 // whole days between today (local) and a 'YYYY-MM-DD' deadline (negative = overdue)
@@ -25,6 +25,7 @@ export function DeadlinesBlock({ projectId }) {
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState(null)
   const [showAdd, setShowAdd] = useState(false)
+  const [editItem, setEditItem] = useState(null)
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -176,6 +177,18 @@ export function DeadlinesBlock({ projectId }) {
                   </button>
                 )}
 
+                {canManage(it) && !it.done && (
+                  <button
+                    onClick={() => setEditItem(it)}
+                    disabled={busyId === it.id}
+                    className="shrink-0 px-1 text-faint transition-colors hover:text-ink"
+                    title={t('common.edit')}
+                    aria-label={t('common.edit')}
+                  >
+                    <IconPencil size={15} />
+                  </button>
+                )}
+
                 {canManage(it) && (
                   <button
                     onClick={() => remove(it)}
@@ -184,7 +197,7 @@ export function DeadlinesBlock({ projectId }) {
                     title={t('common.delete')}
                     aria-label={t('common.delete')}
                   >
-                    ✕
+                    <IconTrash size={15} />
                   </button>
                 )}
               </li>
@@ -195,6 +208,15 @@ export function DeadlinesBlock({ projectId }) {
 
       {showAdd && (
         <DeadlineFormModal open={showAdd} onClose={() => setShowAdd(false)} projectId={projectId} onSaved={load} />
+      )}
+      {editItem && (
+        <DeadlineFormModal
+          open={!!editItem}
+          onClose={() => setEditItem(null)}
+          projectId={projectId}
+          item={editItem}
+          onSaved={load}
+        />
       )}
     </section>
   )

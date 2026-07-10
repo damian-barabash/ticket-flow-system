@@ -1,8 +1,19 @@
 import { STATUS, PRIORITY } from '../lib/constants'
-import { timeAgo } from '../lib/format'
+import { timeAgo, formatDay } from '../lib/format'
 import { useT } from '../context/LangContext'
 import { useAuth } from '../context/AuthContext'
-import { Avatar } from './ui'
+import { Avatar, IconCalendar } from './ui'
+
+// deadline color by urgency (grey once done / unset)
+function dueColor(dateStr) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number)
+  const n = Math.round((new Date(y, m - 1, d) - today) / 86400000)
+  if (n < 0) return '#FF2E2E'
+  if (n <= 2) return '#E3B341'
+  return '#A974FF'
+}
 
 // A ticket rendered like a paper ticket: body + dashed perforation + stub.
 export function TicketCard({ ticket, unread, commentCount = 0, creator, photos = [], onOpen }) {
@@ -76,10 +87,15 @@ export function TicketCard({ ticket, unread, commentCount = 0, creator, photos =
           </div>
         )}
 
-        <div className="mt-3 flex items-center gap-3 text-faint">
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-faint">
           <span className="label-sm">{timeAgo(ticket.updated_at || ticket.created_at)}</span>
           {commentCount > 0 && (
             <span className="label-sm flex items-center gap-1">✦ {commentCount}</span>
+          )}
+          {ticket.due_date && ticket.status !== 'done' && (
+            <span className="label-sm flex items-center gap-1" style={{ color: dueColor(ticket.due_date) }}>
+              <IconCalendar size={12} /> {formatDay(ticket.due_date)}
+            </span>
           )}
           <span className="ml-auto flex items-center gap-1.5">
             <Avatar name={creator?.full_name} email={creator?.email} size={20} />
