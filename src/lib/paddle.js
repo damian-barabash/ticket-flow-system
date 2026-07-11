@@ -8,7 +8,7 @@
 // Until the client token is set (and the domain is approved in Paddle), the
 // checkout falls back to a graceful "not available yet" message.
 export const PADDLE_PRICE_ID = 'pri_01kx8x8vj4fbms68n88217g7w1'
-export const PADDLE_CLIENT_TOKEN = '' // TODO: paste the Paddle client-side token
+export const PADDLE_CLIENT_TOKEN = 'live_5b9187cbde834f372cdad73e9d0'
 export const PADDLE_ENV = 'production' // 'sandbox' | 'production'
 export const PRICE_LABEL = '1 zł / mies.'
 
