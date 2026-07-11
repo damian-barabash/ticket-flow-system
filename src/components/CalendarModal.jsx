@@ -13,13 +13,16 @@ function todayStr() {
   return ymd(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
-// Minimalist month calendar of project deadlines: tickets that carry a due_date
-// plus the project goals. Big popup on desktop, fullscreen on mobile.
+// Minimalist month calendar of deadlines: tickets that carry a due_date plus
+// goals. Scoped to one project (projectId) or global (no projectId → every
+// project the viewer can access). Big popup on desktop, fullscreen on mobile.
 export function CalendarModal({ projectId, onClose, onOpenTicket }) {
   const { t, lang } = useT()
+  const all = !projectId
   const [loading, setLoading] = useState(true)
   const [tickets, setTickets] = useState([])
   const [goals, setGoals] = useState([])
+  const [projNames, setProjNames] = useState({})
   const now = new Date()
   const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() })
   const [selected, setSelected] = useState(todayStr())
@@ -37,23 +40,33 @@ export function CalendarModal({ projectId, onClose, onOpenTicket }) {
   useEffect(() => {
     let alive = true
     ;(async () => {
-      const [{ data: tix }, { data: gl }] = await Promise.all([
-        supabase
-          .from('tickets')
-          .select('id, number, title, status, due_date')
-          .eq('project_id', projectId)
-          .not('due_date', 'is', null),
-        supabase.from('project_deadlines').select('id, title, deadline, done').eq('project_id', projectId),
+      // RLS scopes both queries to what the viewer may see; in global mode we
+      // simply drop the project filter and also fetch project names for labels.
+      let tq = supabase.from('tickets').select('id, number, title, status, due_date, project_id').not('due_date', 'is', null)
+      let gq = supabase.from('project_deadlines').select('id, title, deadline, done, project_id')
+      if (!all) {
+        tq = tq.eq('project_id', projectId)
+        gq = gq.eq('project_id', projectId)
+      }
+      const [{ data: tix }, { data: gl }, projs] = await Promise.all([
+        tq,
+        gq,
+        all ? supabase.from('projects').select('id, name') : Promise.resolve({ data: null }),
       ])
       if (!alive) return
       setTickets(tix ?? [])
       setGoals(gl ?? [])
+      if (projs?.data) {
+        const m = {}
+        projs.data.forEach((p) => (m[p.id] = p.name))
+        setProjNames(m)
+      }
       setLoading(false)
     })()
     return () => {
       alive = false
     }
-  }, [projectId])
+  }, [projectId, all])
 
   // 'YYYY-MM-DD' -> { tickets: [], goals: [] }
   const byDate = useMemo(() => {
@@ -110,7 +123,7 @@ export function CalendarModal({ projectId, onClose, onOpenTicket }) {
       >
         {/* header */}
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
-          <h2 className="font-mono uppercase tracking-label text-[12px] text-ink">{t('calendar.title')}</h2>
+          <h2 className="font-mono uppercase tracking-label text-[12px] text-ink">{all ? t('calendar.titleAll') : t('calendar.title')}</h2>
           <button
             onClick={requestClose}
             className="flex h-8 w-8 items-center justify-center text-faint transition-colors hover:text-ink"
@@ -219,12 +232,19 @@ export function CalendarModal({ projectId, onClose, onOpenTicket }) {
                     return (
                       <button
                         key={tk.id}
-                        onClick={() => onOpenTicket?.(tk.id)}
+                        onClick={() => onOpenTicket?.(tk.id, tk.project_id)}
                         className="flex w-full items-center gap-3 border border-line bg-bg px-3 py-2.5 text-left transition-colors hover:border-line2"
                       >
                         <span className="h-2 w-2 shrink-0" style={{ background: s.dot }} />
                         <span className="font-mono text-[10px] text-faint">№ {String(tk.number).padStart(3, '0')}</span>
-                        <span className="min-w-0 flex-1 truncate text-sm text-ink">{tk.title}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          <span className="block truncate text-sm text-ink">{tk.title}</span>
+                          {all && projNames[tk.project_id] && (
+                            <span className="block truncate font-mono text-[9px] uppercase tracking-label text-faint">
+                              {projNames[tk.project_id]}
+                            </span>
+                          )}
+                        </span>
                         <span className="shrink-0 font-mono uppercase tracking-label text-[9px]" style={{ color: s.text }}>
                           {t('enum.status.' + key)}
                         </span>

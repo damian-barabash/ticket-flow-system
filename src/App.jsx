@@ -7,8 +7,10 @@ import Register from './pages/Register'
 import Login from './pages/Login'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
+import WorkspaceDetail from './pages/WorkspaceDetail'
 import AdminUsers from './pages/AdminUsers'
 import Inquiries from './pages/Inquiries'
+import { CookieConsent } from './components/CookieConsent'
 import { Spinner } from './components/ui'
 
 function LoginRoute() {
@@ -48,6 +50,14 @@ export default function App() {
             }
           />
           <Route
+            path="/workspaces/:id"
+            element={
+              <ProtectedRoute>
+                <WorkspaceDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/users"
             element={
               <ProtectedRoute staffOnly>
@@ -65,6 +75,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <CookieConsent />
         </HashRouter>
       </LangProvider>
     </AuthProvider>

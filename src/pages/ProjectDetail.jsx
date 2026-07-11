@@ -63,6 +63,12 @@ export default function ProjectDetail() {
   const [showMembers, setShowMembers] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
 
+  async function archiveProject() {
+    if (!confirm(t('project.confirmArchive', { name: project?.name }))) return
+    await supabase.from('projects').update({ archived: true }).eq('id', id)
+    navigate('/projects')
+  }
+
   // "By version" only makes sense on the Done tab (fixed_version). Available to admin & client.
   const SORTS = [
     { key: 'recent', label: t('project.sortRecent') },
@@ -252,6 +258,9 @@ export default function ProjectDetail() {
                     </button>
                     <button onClick={() => setShowEdit(true)} className="btn-ghost">
                       {t('project.edit')}
+                    </button>
+                    <button onClick={archiveProject} className="btn-ghost">
+                      {t('project.archive')}
                     </button>
                   </>
                 )}

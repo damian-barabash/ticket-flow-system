@@ -631,6 +631,7 @@ export default function Landing() {
         <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
           <a href="/privacy/" className="label transition-colors hover:text-ink">{t('landing.footer.privacy')}</a>
           <a href="/refund/" className="label transition-colors hover:text-ink">{t('landing.footer.refund')}</a>
+          <a href="/cookies/" className="label transition-colors hover:text-ink">{t('landing.footer.cookies')}</a>
           <span className="label">{t('landing.footer.copy')}</span>
         </div>
       </footer>

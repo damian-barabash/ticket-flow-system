@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ticket Flow — Polityka cookies / Cookie Policy</title>
+  <meta name="robots" content="index, follow" />
+  <style>
+    :root {
+      --bg: #0a0a0b; --surface: #101013; --line: #26262b; --ink: #ededed;
+      --muted: #9a9aa2; --faint: #6a6a72; --accent: #ff2e2e;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: var(--sans); line-height: 1.65; font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 40px 20px 96px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 36px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand .mark {
+      width: 22px; height: 30px; border-radius: 4px 4px 3px 3px; position: relative; flex: none;
+      background: var(--accent);
+    }
+    .brand .mark::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 0;
+      border-left: 1px dashed rgba(0,0,0,.5); transform: translateX(-50%); }
+    .brand b { font-size: 14px; letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+    .langs { display: flex; gap: 6px; }
+    .langs button {
+      font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      background: transparent; color: var(--muted); border: 1px solid var(--line);
+      padding: 6px 10px; cursor: pointer; transition: .15s;
+    }
+    .langs button:hover { color: var(--ink); }
+    .langs button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    h1 { font-size: 28px; line-height: 1.15; letter-spacing: -.01em; margin: 0 0 8px; }
+    .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+    .updated { font-family: var(--mono); font-size: 12px; color: var(--faint); margin-bottom: 32px; }
+    h2 { font-size: 18px; margin: 34px 0 10px; letter-spacing: -.01em; }
+    p, li { color: #cfcfd6; }
+    a { color: var(--accent); }
+    ul { padding-left: 18px; }
+    li { margin: 5px 0; }
+    .box { border: 1px solid var(--line); background: var(--surface); padding: 16px 18px; margin-top: 14px; }
+    .foot { margin-top: 48px; border-top: 1px solid var(--line); padding-top: 18px; font-size: 13px; color: var(--faint); }
+    section[data-lang] { display: none; }
+    section[data-lang].on { display: block; }
+    .label { font-family: var(--mono); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--faint); }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 14px; }
+    th, td { text-align: left; padding: 9px 10px; border: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--faint); font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 500; }
+    td b { color: var(--ink); }
+    .tablewrap { overflow-x: auto; }
+    .back { display: inline-block; margin-top: 8px; font-family: var(--mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="brand"><span class="mark"></span><b>Ticket Flow</b></span>
+      <div class="langs">
+        <button data-set="pl" class="on">PL</button>
+        <button data-set="ru">RU</button>
+        <button data-set="en">EN</button>
+      </div>
+    </header>
+
+    <!-- ============ POLSKI ============ -->
+    <section data-lang="pl" class="on">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Polityka cookies</h1>
+      <div class="updated">Ostatnia aktualizacja: 11 lipca 2026</div>
+
+      <p>Ta strona wyjaśnia, jakich plików cookie oraz technologii lokalnego przechowywania
+      (<b>localStorage</b>) używa aplikacja i serwis <b>Ticket Flow</b> (dostępny pod adresem
+      ticketflow.pl). Używamy ich w minimalnym zakresie — wyłącznie po to, aby serwis działał
+      i zapamiętywał Twoje ustawienia.</p>
+
+      <div class="box">
+        <span class="label">Najważniejsze</span>
+        <p style="margin:.4em 0 0">Nie używamy reklamowych ani śledzących plików cookie. Nie korzystamy
+        z Google Analytics, pikseli Facebooka ani innych zewnętrznych narzędzi analitycznych.
+        Nie profilujemy użytkowników i nie sprzedajemy danych.</p>
+      </div>
+
+      <h2>Czym są pliki cookie i localStorage</h2>
+      <p>To małe dane zapisywane przez przeglądarkę na Twoim urządzeniu. Pozwalają m.in. utrzymać
+      zalogowanie, zapamiętać język czy motyw. „localStorage” działa podobnie do cookie, ale dane
+      pozostają w przeglądarce i nie są wysyłane automatycznie z każdym żądaniem.</p>
+
+      <h2>Czego używamy</h2>
+      <div class="tablewrap">
+      <table>
+        <tr><th>Nazwa / rodzaj</th><th>Cel</th><th>Typ</th></tr>
+        <tr><td><b>Sesja logowania</b> (Supabase Auth)</td><td>Utrzymanie zalogowania po odświeżeniu strony.</td><td>Niezbędny</td></tr>
+        <tr><td><b>tf_lang</b></td><td>Zapamiętanie wybranego języka (RU / PL / EN).</td><td>Funkcjonalny</td></tr>
+        <tr><td><b>tf_landing_theme</b></td><td>Zapamiętanie jasnego/ciemnego motywu na stronie głównej.</td><td>Funkcjonalny</td></tr>
+        <tr><td><b>tf_cookie_consent</b></td><td>Zapamiętanie, że zaakceptowano ten komunikat (aby nie pojawiał się ponownie).</td><td>Niezbędny</td></tr>
+        <tr><td><b>tf_tour_*</b></td><td>Zapamiętanie, że samouczek został już pokazany.</td><td>Funkcjonalny</td></tr>
+      </table>
+      </div>
+
+      <h2>Podmioty zewnętrzne</h2>
+      <p>Sesja logowania jest obsługiwana przez <b>Supabase</b> (nasz dostawca bazy danych i uwierzytelniania,
+      serwery w UE). Nie osadzamy zewnętrznych skryptów reklamowych ani analitycznych.</p>
+
+      <h2>Jak zarządzać</h2>
+      <p>Możesz w każdej chwili usunąć lub zablokować pliki cookie i dane lokalne w ustawieniach swojej
+      przeglądarki. Wyłączenie danych niezbędnych może jednak uniemożliwić zalogowanie i korzystanie z aplikacji.</p>
+
+      <h2>Zgoda</h2>
+      <p>Ponieważ używamy wyłącznie niezbędnych i funkcjonalnych danych, komunikat o cookie służy do
+      poinformowania Cię. Twój wybór zapisujemy lokalnie (<b>tf_cookie_consent</b>), aby nie pokazywać
+      go przy każdej wizycie.</p>
+
+      <p><a class="back" href="/">← Powrót do Ticket Flow</a></p>
+      <div class="foot">Ticket Flow · część ekosystemu dbdc studio · kontakt: dbdcstudio@gmail.com</div>
+    </section>
+
+    <!-- ============ РУССКИЙ ============ -->
+    <section data-lang="ru">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Политика использования cookies</h1>
+      <div class="updated">Последнее обновление: 11 июля 2026</div>
+
+      <p>Эта страница объясняет, какие файлы cookie и технологии локального хранилища
+      (<b>localStorage</b>) использует приложение и сервис <b>Ticket Flow</b> (доступен по адресу
+      ticketflow.pl). Мы используем их в минимальном объёме — только чтобы сервис работал и запоминал
+      ваши настройки.</p>
+
+      <div class="box">
+        <span class="label">Главное</span>
+        <p style="margin:.4em 0 0">Мы не используем рекламные и трекинговые cookie. У нас нет Google Analytics,
+        пикселей Facebook и других внешних аналитических инструментов. Мы не профилируем пользователей
+        и не продаём данные.</p>
+      </div>
+
+      <h2>Что такое cookie и localStorage</h2>
+      <p>Это небольшие данные, которые браузер сохраняет на вашем устройстве. Они позволяют, например,
+      удерживать вход, запоминать язык или тему. «localStorage» работает похоже на cookie, но данные
+      остаются в браузере и не отправляются автоматически с каждым запросом.</p>
+
+      <h2>Что мы используем</h2>
+      <div class="tablewrap">
+      <table>
+        <tr><th>Имя / вид</th><th>Назначение</th><th>Тип</th></tr>
+        <tr><td><b>Сессия входа</b> (Supabase Auth)</td><td>Удержание авторизации после перезагрузки страницы.</td><td>Необходимый</td></tr>
+        <tr><td><b>tf_lang</b></td><td>Запоминание выбранного языка (RU / PL / EN).</td><td>Функциональный</td></tr>
+        <tr><td><b>tf_landing_theme</b></td><td>Запоминание светлой/тёмной темы на главной странице.</td><td>Функциональный</td></tr>
+        <tr><td><b>tf_cookie_consent</b></td><td>Запоминание того, что вы приняли это уведомление (чтобы оно не всплывало снова).</td><td>Необходимый</td></tr>
+        <tr><td><b>tf_tour_*</b></td><td>Запоминание того, что обучающий тур уже показан.</td><td>Функциональный</td></tr>
+      </table>
+      </div>
+
+      <h2>Сторонние сервисы</h2>
+      <p>Сессия входа обслуживается <b>Supabase</b> (наш провайдер базы данных и аутентификации,
+      серверы в ЕС). Мы не встраиваем внешние рекламные или аналитические скрипты.</p>
+
+      <h2>Как управлять</h2>
+      <p>Вы можете в любой момент удалить или заблокировать cookie и локальные данные в настройках
+      своего браузера. Отключение необходимых данных может сделать вход и работу приложения невозможными.</p>
+
+      <h2>Согласие</h2>
+      <p>Поскольку мы используем только необходимые и функциональные данные, уведомление о cookie служит,
+      чтобы вас проинформировать. Ваш выбор мы сохраняем локально (<b>tf_cookie_consent</b>), чтобы не
+      показывать его при каждом визите.</p>
+
+      <p><a class="back" href="/">← Назад в Ticket Flow</a></p>
+      <div class="foot">Ticket Flow · часть экосистемы dbdc studio · контакт: dbdcstudio@gmail.com</div>
+    </section>
+
+    <!-- ============ ENGLISH ============ -->
+    <section data-lang="en">
+      <div class="eyebrow">Ticket Flow</div>
+      <h1>Cookie Policy</h1>
+      <div class="updated">Last updated: 11 July 2026</div>
+
+      <p>This page explains which cookies and local-storage technologies (<b>localStorage</b>) the
+      <b>Ticket Flow</b> app and service (available at ticketflow.pl) use. We use them minimally —
+      only to make the service work and to remember your settings.</p>
+
+      <div class="box">
+        <span class="label">In short</span>
+        <p style="margin:.4em 0 0">We do not use advertising or tracking cookies. We have no Google Analytics,
+        Facebook pixels or other third-party analytics. We do not profile users and do not sell data.</p>
+      </div>
+
+      <h2>What cookies and localStorage are</h2>
+      <p>They are small pieces of data your browser stores on your device. They let us, for example, keep
+      you signed in and remember your language or theme. “localStorage” works like a cookie, but the data
+      stays in the browser and is not sent automatically with every request.</p>
+
+      <h2>What we use</h2>
+      <div class="tablewrap">
+      <table>
+        <tr><th>Name / kind</th><th>Purpose</th><th>Type</th></tr>
+        <tr><td><b>Login session</b> (Supabase Auth)</td><td>Keeps you signed in across page reloads.</td><td>Strictly necessary</td></tr>
+        <tr><td><b>tf_lang</b></td><td>Remembers your chosen language (RU / PL / EN).</td><td>Functional</td></tr>
+        <tr><td><b>tf_landing_theme</b></td><td>Remembers the light/dark theme on the home page.</td><td>Functional</td></tr>
+        <tr><td><b>tf_cookie_consent</b></td><td>Remembers that you accepted this notice (so it does not show again).</td><td>Strictly necessary</td></tr>
+        <tr><td><b>tf_tour_*</b></td><td>Remembers that the onboarding tour was already shown.</td><td>Functional</td></tr>
+      </table>
+      </div>
+
+      <h2>Third parties</h2>
+      <p>The login session is handled by <b>Supabase</b> (our database and authentication provider, EU servers).
+      We do not embed third-party advertising or analytics scripts.</p>
+
+      <h2>How to manage</h2>
+      <p>You can delete or block cookies and local data at any time in your browser settings. Disabling the
+      strictly necessary data may make signing in and using the app impossible.</p>
+
+      <h2>Consent</h2>
+      <p>Because we only use strictly necessary and functional data, the cookie notice is there to inform you.
+      We store your choice locally (<b>tf_cookie_consent</b>) so we don’t show it on every visit.</p>
+
+      <p><a class="back" href="/">← Back to Ticket Flow</a></p>
+      <div class="foot">Ticket Flow · part of the dbdc studio ecosystem · contact: dbdcstudio@gmail.com</div>
+    </section>
+  </div>
+
+  <script>
+    var btns = document.querySelectorAll('.langs button');
+    var secs = document.querySelectorAll('section[data-lang]');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        var l = b.getAttribute('data-set');
+        btns.forEach(function (x) { x.classList.toggle('on', x === b); });
+        secs.forEach(function (s) { s.classList.toggle('on', s.getAttribute('data-lang') === l); });
+        document.documentElement.lang = l;
+      });
+    });
+  </script>
+</body>
+</html>
