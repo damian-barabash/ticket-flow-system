@@ -11,6 +11,7 @@ import WorkspaceDetail from './pages/WorkspaceDetail'
 import AdminUsers from './pages/AdminUsers'
 import Inquiries from './pages/Inquiries'
 import { CookieConsent } from './components/CookieConsent'
+import { BillingGate } from './components/BillingGate'
 import { Spinner } from './components/ui'
 
 function LoginRoute() {
@@ -75,6 +76,7 @@ export default function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <BillingGate />
           <CookieConsent />
         </HashRouter>
       </LangProvider>
