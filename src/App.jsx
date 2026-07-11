@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 import AdminUsers from './pages/AdminUsers'
+import Inquiries from './pages/Inquiries'
 import { Spinner } from './components/ui'
 
 function LoginRoute() {
@@ -51,6 +52,14 @@ export default function App() {
             element={
               <ProtectedRoute staffOnly>
                 <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/inquiries"
+            element={
+              <ProtectedRoute moderatorOnly>
+                <Inquiries />
               </ProtectedRoute>
             }
           />

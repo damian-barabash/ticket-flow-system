@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { LogoMark } from '../components/Logo'
 import { LangSwitch } from '../components/LangSwitch'
+import { EnterpriseModal } from '../components/EnterpriseModal'
 import { STATUS } from '../lib/constants'
 
 // Scroll-reveal: toggle .is-in on every .reveal as it enters the viewport.
@@ -62,6 +63,7 @@ export default function Landing() {
   const [useCase, setUseCase] = useState(1)
   const [feat, setFeat] = useState(1)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [entOpen, setEntOpen] = useState(false)
   // Light theme lives ONLY on the landing (the panel stays dark). Persisted locally.
   const [light, setLight] = useState(() => {
     try {
@@ -496,8 +498,9 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="reveal mx-auto max-w-[460px]">
-          <div className="relative border border-accent/40 bg-surface p-8 shadow-[0_0_60px_-20px_rgba(255,46,46,0.4)]">
+        <div className="reveal mx-auto grid max-w-[940px] items-stretch gap-6 md:grid-cols-2">
+          {/* ── Pro plan */}
+          <div className="relative flex flex-col border border-accent/40 bg-surface p-8 shadow-[0_0_60px_-20px_rgba(255,46,46,0.4)]">
             {/* faint logo watermark in the card */}
             <div className="pointer-events-none absolute right-4 top-4 opacity-[0.06]">
               <LogoMark size={120} />
@@ -537,6 +540,44 @@ export default function Landing() {
             <button onClick={() => go('/register')} className="btn-accent mt-8 w-full">
               {t('landing.pricing.cta')}
             </button>
+          </div>
+
+          {/* ── Enterprise plan (negotiable, custom features/integrations) */}
+          <div className="relative flex flex-col border border-legend/45 bg-surface p-8 shadow-[0_0_60px_-20px_rgba(169,116,255,0.4)]">
+            <div className="pointer-events-none absolute right-4 top-4 opacity-[0.06]">
+              <LogoMark size={120} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="label text-legend">{t('landing.pricing.entName')}</span>
+              <span className="border border-legend/45 bg-legendSoft px-2 py-0.5 font-mono text-[10px] uppercase tracking-label text-legend">
+                {t('landing.pricing.entTag')}
+              </span>
+            </div>
+
+            <div className="mt-6 flex items-end gap-2">
+              <span className="text-4xl font-semibold tracking-tight text-ink sm:text-5xl">{t('landing.pricing.entPrice')}</span>
+            </div>
+            <p className="mt-2 text-xs text-faint">{t('landing.pricing.entPriceNote')}</p>
+
+            <p className="mt-4 text-sm leading-relaxed text-muted">{t('landing.pricing.entLead')}</p>
+
+            <div className="perforation my-6" />
+
+            <ul className="space-y-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm text-muted">
+                  <span className="mt-0.5 text-legend">✦</span>
+                  {t(`landing.pricing.e${i}`)}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-auto pt-8">
+              <button onClick={() => setEntOpen(true)} className="btn-solid w-full">
+                {t('landing.pricing.entCta')}
+              </button>
+              <p className="mt-3 text-center text-xs text-faint">{t('landing.pricing.entNote')}</p>
+            </div>
           </div>
         </div>
       </Section>
@@ -593,6 +634,9 @@ export default function Landing() {
           <span className="label">{t('landing.footer.copy')}</span>
         </div>
       </footer>
+
+      {/* Enterprise inquiry form (opened from the Enterprise plan CTA) */}
+      <EnterpriseModal open={entOpen} onClose={() => setEntOpen(false)} />
     </div>
   )
 }

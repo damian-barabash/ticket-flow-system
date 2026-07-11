@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { Wordmark } from './Logo'
@@ -7,14 +8,37 @@ import { Avatar } from './ui'
 import { LangSwitch } from './LangSwitch'
 
 export function TopBar() {
-  const { profile, role, isStaff, signOut } = useAuth()
+  const { profile, role, isStaff, isModerator, signOut } = useAuth()
   const { t } = useT()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [newInquiries, setNewInquiries] = useState(0)
 
   const roleLabel = t(
     role === 'moderator' ? 'topbar.moderator' : role === 'admin' ? 'topbar.admin' : 'topbar.client'
   )
+
+  // Moderators: live count of unhandled Enterprise inquiries for the nav badge.
+  useEffect(() => {
+    if (!isModerator) return
+    let active = true
+    const loadCount = async () => {
+      const { count } = await supabase
+        .from('enterprise_inquiries')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'new')
+      if (active) setNewInquiries(count ?? 0)
+    }
+    loadCount()
+    const ch = supabase
+      .channel('topbar_inquiries')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enterprise_inquiries' }, loadCount)
+      .subscribe()
+    return () => {
+      active = false
+      supabase.removeChannel(ch)
+    }
+  }, [isModerator])
 
   // Close the mobile menu on Esc.
   useEffect(() => {
@@ -37,6 +61,19 @@ export function TopBar() {
             <span className="inline-block h-1.5 w-1.5 bg-ok" />
             <span className="label">{roleLabel}</span>
           </span>
+          {isModerator && (
+            <button
+              onClick={() => navigate('/admin/inquiries')}
+              className="label relative hidden hover:text-ink transition-colors sm:block"
+            >
+              {t('topbar.inquiries')}
+              {newInquiries > 0 && (
+                <span className="absolute -right-3 -top-2 flex h-4 min-w-4 items-center justify-center bg-accent px-1 font-mono text-[9px] leading-none text-bg">
+                  {newInquiries}
+                </span>
+              )}
+            </button>
+          )}
           {isStaff && (
             <button
               onClick={() => navigate('/admin/users')}
@@ -105,6 +142,22 @@ export function TopBar() {
                 </div>
               </div>
 
+              {isModerator && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false)
+                    navigate('/admin/inquiries')
+                  }}
+                  className="label flex items-center gap-2 py-3 text-left hover:text-ink transition-colors"
+                >
+                  {t('topbar.inquiries')}
+                  {newInquiries > 0 && (
+                    <span className="flex h-4 min-w-4 items-center justify-center bg-accent px-1 font-mono text-[9px] leading-none text-bg">
+                      {newInquiries}
+                    </span>
+                  )}
+                </button>
+              )}
               {isStaff && (
                 <button
                   onClick={() => {
