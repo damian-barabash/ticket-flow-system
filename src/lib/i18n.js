@@ -374,6 +374,9 @@ const DICT = {
       cancelDone: 'Подписка будет отменена в конце периода. Доступ сохранится до {date}.',
       cancelError: 'Не удалось отменить подписку. Попробуйте позже или напишите dbdcstudio@gmail.com.',
       cancelling: 'Отмена…',
+      payMonthly: 'Помесячно — {price}/мес',
+      payYearly: 'За год — {price}/год',
+      yearlySave: '2 месяца бесплатно',
     },
     landing: {
       nav: { features: 'Возможности', pricing: 'Цена', compare: 'Сравнение', faq: 'Вопросы', login: 'Войти', signup: 'Начать' },
@@ -962,6 +965,9 @@ const DICT = {
       cancelDone: 'Subskrypcja zostanie anulowana na koniec okresu. Dostęp do {date}.',
       cancelError: 'Nie udało się anulować. Spróbuj później lub napisz dbdcstudio@gmail.com.',
       cancelling: 'Anulowanie…',
+      payMonthly: 'Miesięcznie — {price}/mies.',
+      payYearly: 'Rocznie — {price}/rok',
+      yearlySave: '2 miesiące gratis',
     },
     landing: {
       nav: { features: 'Funkcje', pricing: 'Cena', compare: 'Porównanie', faq: 'Pytania', login: 'Zaloguj', signup: 'Zacznij' },
@@ -1550,6 +1556,9 @@ const DICT = {
       cancelDone: 'The subscription will be canceled at the end of the period. Access until {date}.',
       cancelError: 'Could not cancel. Please try later or email dbdcstudio@gmail.com.',
       cancelling: 'Canceling…',
+      payMonthly: 'Monthly — {price}/mo',
+      payYearly: 'Yearly — {price}/yr',
+      yearlySave: '2 months free',
     },
     landing: {
       nav: { features: 'Features', pricing: 'Pricing', compare: 'Compare', faq: 'FAQ', login: 'Sign in', signup: 'Start' },

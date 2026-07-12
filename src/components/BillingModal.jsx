@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { entitlement } from '../lib/billing'
 import { openCheckout, PRICE_LABEL } from '../lib/paddle'
+import { PlanButtons } from './PlanButtons'
 import { formatDay } from '../lib/format'
 import { Modal, Spinner } from './ui'
 
@@ -20,9 +21,9 @@ export function BillingModal({ open, onClose }) {
   const endDate = profile?.subscription_ends_at ? formatDay(profile.subscription_ends_at) : ''
   const canCancel = ent.state === 'active' && !!profile?.paddle_subscription_id
 
-  async function pay() {
+  async function pay(plan) {
     setError('')
-    const r = await openCheckout({ email: profile?.email, profileId: profile?.id })
+    const r = await openCheckout({ email: profile?.email, profileId: profile?.id, plan })
     if (!r.ok && r.reason === 'not_configured') setError(t('billing.notConfigured'))
   }
 
@@ -66,19 +67,21 @@ export function BillingModal({ open, onClose }) {
       {msg && <div className="mb-5 border border-ok/40 bg-ok/10 px-3 py-2 text-xs text-ok">{msg}</div>}
       {error && <div className="mb-5 border border-accent/40 bg-accentSoft px-3 py-2 text-xs text-accent">{error}</div>}
 
+      {ent.state !== 'active' && !msg && (
+        <div className="mb-6">
+          <PlanButtons onPick={pay} busy={busy} />
+        </div>
+      )}
+
       <div className="flex justify-end gap-3">
         <button onClick={onClose} className="btn-ghost">
           {t('common.close')}
         </button>
-        {canCancel ? (
+        {canCancel && (
           <button onClick={cancel} disabled={busy || !!msg} className="btn-solid">
             {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('billing.cancelBtn')}
           </button>
-        ) : ent.state !== 'active' ? (
-          <button onClick={pay} className="btn-accent">
-            {t('billing.renew')}
-          </button>
-        ) : null}
+        )}
       </div>
     </Modal>
   )

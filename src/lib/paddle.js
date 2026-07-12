@@ -7,13 +7,16 @@
 //     Authentication → Client-side tokens. Paste it here once available.
 // Until the client token is set (and the domain is approved in Paddle), the
 // checkout falls back to a graceful "not available yet" message.
-// NOTE: Paddle's minimum charge for PLN is 2.65 zł, so the price must be ≥ that.
-// 1 zł is rejected with transaction_balance_less_than_charge_limit. Currently 3 zł
-// (test) — swap PADDLE_PRICE_ID for a new price to change it (prices are immutable).
-export const PADDLE_PRICE_ID = 'pri_01kx8zn8fv4ztt8qpvfazv4nba'
+// Live subscription prices (immutable in Paddle — to change, create a new price
+// and swap the id here). Monthly $12 / yearly $120.
+export const PADDLE_PRICES = {
+  monthly: 'pri_01kxbb3dgkh6yq4khqf19ek88q',
+  yearly: 'pri_01kxbb3dt3pdcfchzhp8kvsax2',
+}
+export const PRICE_LABELS = { monthly: '$12', yearly: '$120' }
+export const PRICE_LABEL = PRICE_LABELS.monthly // default for compact displays
 export const PADDLE_CLIENT_TOKEN = 'live_5b9187cbde834f372cdad73e9d0'
 export const PADDLE_ENV = 'production' // 'sandbox' | 'production'
-export const PRICE_LABEL = '3 zł / mies.'
 
 let paddlePromise = null
 
@@ -35,13 +38,14 @@ export function isPaddleConfigured() {
   return Boolean(PADDLE_CLIENT_TOKEN)
 }
 
-// Opens the Paddle checkout overlay for the monthly subscription. `customData`
+// Opens the Paddle checkout overlay. `plan` = 'monthly' | 'yearly'. customData
 // carries the profile id so the webhook can map the subscription back to the user.
-export async function openCheckout({ email, profileId, onClose } = {}) {
+export async function openCheckout({ email, profileId, plan = 'monthly', onClose } = {}) {
   if (!isPaddleConfigured()) {
     return { ok: false, reason: 'not_configured' }
   }
   try {
+    const priceId = PADDLE_PRICES[plan] || PADDLE_PRICES.monthly
     const Paddle = await loadPaddle()
     if (PADDLE_ENV === 'sandbox') Paddle.Environment.set('sandbox')
     Paddle.Setup({
@@ -51,7 +55,7 @@ export async function openCheckout({ email, profileId, onClose } = {}) {
       },
     })
     Paddle.Checkout.open({
-      items: [{ priceId: PADDLE_PRICE_ID, quantity: 1 }],
+      items: [{ priceId, quantity: 1 }],
       customer: email ? { email } : undefined,
       customData: profileId ? { profile_id: profileId } : undefined,
       settings: { displayMode: 'overlay', theme: 'dark', locale: 'pl' },

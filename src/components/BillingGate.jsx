@@ -4,9 +4,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { entitlement } from '../lib/billing'
-import { openCheckout, PRICE_LABEL } from '../lib/paddle'
+import { openCheckout } from '../lib/paddle'
+import { PlanButtons } from './PlanButtons'
 import { LogoMark } from './Logo'
-import { Spinner } from './ui'
 
 // Blocking overlays shown when access has lapsed:
 //   admin  → "account not paid" + pay button (trial banner lives in TopBar)
@@ -52,9 +52,9 @@ export function BillingGate() {
   const onPanel = /^\/(projects|workspaces|admin)/.test(pathname)
   if (!session || isModerator || !onPanel) return null
 
-  async function pay() {
+  async function pay(plan) {
     setPaying(true)
-    const r = await openCheckout({ email: profile?.email, profileId: profile?.id })
+    const r = await openCheckout({ email: profile?.email, profileId: profile?.id, plan })
     setPaying(false)
     if (!r.ok && r.reason === 'not_configured') alert(t('billing.notConfigured'))
   }
@@ -68,10 +68,9 @@ export function BillingGate() {
         <LogoMark size={44} />
         <h2 className="mt-5 text-xl font-semibold text-ink">{t('billing.unpaidTitle')}</h2>
         <p className="mx-auto mt-2 max-w-[380px] text-sm text-muted">{t('billing.unpaidBody')}</p>
-        <button onClick={pay} disabled={paying} className="btn-accent mt-6 w-full max-w-[280px]">
-          {paying ? <Spinner className="border-bg/40 border-t-bg" /> : t('billing.payCta')}
-        </button>
-        <p className="mt-2 text-xs text-faint">{t('billing.priceNote', { price: PRICE_LABEL })}</p>
+        <div className="mt-6">
+          <PlanButtons onPick={pay} busy={paying} />
+        </div>
         <button onClick={signOut} className="label mt-6 text-faint hover:text-ink transition-colors">
           {t('billing.signOut')}
         </button>

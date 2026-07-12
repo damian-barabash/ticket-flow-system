@@ -7,7 +7,6 @@ import { Wordmark } from './Logo'
 import { Avatar } from './ui'
 import { LangSwitch } from './LangSwitch'
 import { entitlement } from '../lib/billing'
-import { openCheckout } from '../lib/paddle'
 import { BillingModal } from './BillingModal'
 
 export function TopBar() {
@@ -15,11 +14,6 @@ export function TopBar() {
   const { t } = useT()
   const ent = isAdmin ? entitlement(profile) : null
   const [showBilling, setShowBilling] = useState(false)
-
-  async function payTrial() {
-    const r = await openCheckout({ email: profile?.email, profileId: profile?.id })
-    if (!r.ok && r.reason === 'not_configured') alert(t('billing.notConfigured'))
-  }
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [newInquiries, setNewInquiries] = useState(0)
@@ -142,7 +136,7 @@ export function TopBar() {
             <span className="text-xs text-accent">
               {t(ent.daysLeft === 1 ? 'billing.trialLeftOne' : 'billing.trialLeft', { n: ent.daysLeft })}
             </span>
-            <button onClick={payTrial} className="label text-accent underline underline-offset-2 hover:text-ink transition-colors">
+            <button onClick={() => setShowBilling(true)} className="label text-accent underline underline-offset-2 hover:text-ink transition-colors">
               {t('billing.trialCta')}
             </button>
           </div>
