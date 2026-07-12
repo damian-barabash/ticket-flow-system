@@ -1,13 +1,7 @@
-import { supabase } from './supabase'
-
-// Fire-and-forget call to the `notify` Edge Function (Resend emails).
-// Safe no-op if the function isn't deployed / RESEND_API_KEY not set.
-export async function notify(event, ticketId, extra = {}) {
-  try {
-    await supabase.functions.invoke('notify', {
-      body: { event, ticket_id: ticketId, ...extra },
-    })
-  } catch {
-    /* notifications are best-effort; never block the UI */
-  }
+// Project/ticket email notifications are intentionally DISABLED.
+// Ticket Flow only sends system emails (email verification, subscription
+// paid / payment failed, invoices) — never per-project activity emails.
+// Kept as a no-op so existing call sites don't need to change.
+export async function notify() {
+  /* no-op — system emails only */
 }
