@@ -37,6 +37,15 @@ export default function AdminUsers() {
 
   async function removeUser(u) {
     if (!confirm(t('users.confirmDelete', { email: u.email }))) return
+    // Auto-cancel the user's Paddle subscription before deleting the account.
+    // Only a moderator can cancel someone else's; the function no-ops if none.
+    if (isModerator) {
+      try {
+        await supabase.functions.invoke('paddle-cancel', { body: { action: 'cancel_for_user', user_id: u.id } })
+      } catch {
+        /* best-effort — proceed with deletion regardless */
+      }
+    }
     const { error } = await supabase.functions.invoke('create-user', {
       body: { action: 'delete', user_id: u.id },
     })

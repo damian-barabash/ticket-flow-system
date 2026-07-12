@@ -8,11 +8,13 @@ import { Avatar } from './ui'
 import { LangSwitch } from './LangSwitch'
 import { entitlement } from '../lib/billing'
 import { openCheckout } from '../lib/paddle'
+import { BillingModal } from './BillingModal'
 
 export function TopBar() {
   const { profile, role, isStaff, isModerator, isAdmin, signOut } = useAuth()
   const { t } = useT()
   const ent = isAdmin ? entitlement(profile) : null
+  const [showBilling, setShowBilling] = useState(false)
 
   async function payTrial() {
     const r = await openCheckout({ email: profile?.email, profileId: profile?.id })
@@ -57,6 +59,7 @@ export function TopBar() {
   }, [menuOpen])
 
   return (
+    <>
     <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur">
       <div className="mx-auto flex max-w-[1320px] items-center justify-between px-6 py-4">
         <button onClick={() => navigate('/projects')} className="transition-opacity hover:opacity-80">
@@ -89,6 +92,11 @@ export function TopBar() {
               className="label hidden hover:text-ink transition-colors sm:block"
             >
               {t('topbar.users')}
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => setShowBilling(true)} className="label hidden hover:text-ink transition-colors sm:block">
+              {t('billing.manage')}
             </button>
           )}
 
@@ -191,6 +199,17 @@ export function TopBar() {
                   {t('topbar.users')}
                 </button>
               )}
+              {isAdmin && (
+                <button
+                  onClick={() => {
+                    setMenuOpen(false)
+                    setShowBilling(true)
+                  }}
+                  className="label py-3 text-left hover:text-ink transition-colors"
+                >
+                  {t('billing.manage')}
+                </button>
+              )}
               <button
                 onClick={() => {
                   setMenuOpen(false)
@@ -205,5 +224,7 @@ export function TopBar() {
         </>
       )}
     </header>
+    {showBilling && <BillingModal open={showBilling} onClose={() => setShowBilling(false)} />}
+    </>
   )
 }
