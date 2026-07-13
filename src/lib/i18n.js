@@ -64,6 +64,7 @@ const DICT = {
       noAccount: 'Нет аккаунта?',
     },
     topbar: { moderator: 'Модератор', admin: 'Администратор', client: 'Клиент', users: 'Пользователи', inquiries: 'Заявки', signout: 'Выход', lang: 'Язык', menu: 'Меню' },
+    notif: { newTicket: 'Новый тикет', taskAssigned: 'Задание для тебя', newComment: 'Новый комментарий' },
     projects: {
       catalog: 'Каталог',
       heading: 'Проекты',
@@ -655,6 +656,7 @@ const DICT = {
       noAccount: 'Nie masz konta?',
     },
     topbar: { moderator: 'Moderator', admin: 'Administrator', client: 'Klient', users: 'Użytkownicy', inquiries: 'Zgłoszenia', signout: 'Wyloguj', lang: 'Język', menu: 'Menu' },
+    notif: { newTicket: 'Nowe zgłoszenie', taskAssigned: 'Zadanie dla Ciebie', newComment: 'Nowy komentarz' },
     projects: {
       catalog: 'Katalog',
       heading: 'Projekty',
@@ -1246,6 +1248,7 @@ const DICT = {
       noAccount: 'No account?',
     },
     topbar: { moderator: 'Moderator', admin: 'Administrator', client: 'Client', users: 'Users', inquiries: 'Inquiries', signout: 'Sign out', lang: 'Language', menu: 'Menu' },
+    notif: { newTicket: 'New ticket', taskAssigned: 'Task for you', newComment: 'New comment' },
     projects: {
       catalog: 'Catalog',
       heading: 'Projects',

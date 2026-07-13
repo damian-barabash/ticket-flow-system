@@ -11,17 +11,14 @@ import WorkspaceDetail from './pages/WorkspaceDetail'
 import AdminUsers from './pages/AdminUsers'
 import Inquiries from './pages/Inquiries'
 import { CookieConsent } from './components/CookieConsent'
+import { DesktopNotify } from './components/DesktopNotify'
+import { Splash } from './components/Splash'
 import { BillingGate } from './components/BillingGate'
 import { Spinner } from './components/ui'
 
 function LoginRoute() {
   const { session, loading } = useAuth()
-  if (loading)
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Spinner className="h-6 w-6" />
-      </div>
-    )
+  if (loading) return <Splash />
   return session ? <Navigate to="/projects" replace /> : <Login />
 }
 
@@ -77,6 +74,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <BillingGate />
+          <DesktopNotify />
           <CookieConsent />
         </HashRouter>
       </LangProvider>

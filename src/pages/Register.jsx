@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { LogoMark } from '../components/Logo'
 import { Spinner } from '../components/ui'
@@ -27,7 +28,14 @@ async function callFn(name, body) {
 // code sent from system@ticketflow.pl. handle_new_user clamps role to admin|user.
 export default function Register() {
   const { t, lang } = useT()
+  const { session, loading: authLoading } = useAuth()
   const navigate = useNavigate()
+
+  // Already signed in (e.g. the desktop app opens straight on /register) → panel.
+  useEffect(() => {
+    if (!authLoading && session) navigate('/projects', { replace: true })
+  }, [authLoading, session, navigate])
+
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
