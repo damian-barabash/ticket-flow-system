@@ -93,6 +93,12 @@ export function TopBar() {
               {t('billing.manage')}
             </button>
           )}
+          <button
+            onClick={() => navigate('/account')}
+            className="label hidden hover:text-ink transition-colors sm:block"
+          >
+            {t('topbar.account')}
+          </button>
 
           {/* Language switch — always visible (kept out of the burger by design) */}
           <LangSwitch />
@@ -204,6 +210,15 @@ export function TopBar() {
                   {t('billing.manage')}
                 </button>
               )}
+              <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  navigate('/account')
+                }}
+                className="label py-3 text-left hover:text-ink transition-colors"
+              >
+                {t('topbar.account')}
+              </button>
               <button
                 onClick={() => {
                   setMenuOpen(false)

@@ -10,6 +10,8 @@ import ProjectDetail from './pages/ProjectDetail'
 import WorkspaceDetail from './pages/WorkspaceDetail'
 import AdminUsers from './pages/AdminUsers'
 import Inquiries from './pages/Inquiries'
+import Account from './pages/Account'
+import Checkout from './pages/Checkout'
 import { CookieConsent } from './components/CookieConsent'
 import { DesktopNotify } from './components/DesktopNotify'
 import { Splash } from './components/Splash'
@@ -31,6 +33,17 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<LoginRoute />} />
+          {/* Public on purpose: the desktop apps open it straight from the pay
+              button, and a lapsed account must be able to pay without signing in. */}
+          <Route path="/checkout" element={<Checkout />} />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <Account />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/projects"
             element={

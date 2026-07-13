@@ -38,9 +38,21 @@ export function isPaddleConfigured() {
   return Boolean(PADDLE_CLIENT_TOKEN)
 }
 
+// The link that opens a ready-to-pay checkout for one specific account, without
+// signing in on the website again. The desktop apps (macOS / Windows) build this
+// same URL and open it in the browser; /#/checkout turns it into the overlay.
+// Nothing secret travels here: the profile id only tells the webhook which
+// account to credit, so a tampered link would just pay for someone else.
+export function checkoutUrl({ email, profileId, plan = 'monthly', base = 'https://ticketflow.pl' } = {}) {
+  const q = new URLSearchParams({ plan })
+  if (profileId) q.set('pid', profileId)
+  if (email) q.set('email', email)
+  return `${base}/#/checkout?${q.toString()}`
+}
+
 // Opens the Paddle checkout overlay. `plan` = 'monthly' | 'yearly'. customData
 // carries the profile id so the webhook can map the subscription back to the user.
-export async function openCheckout({ email, profileId, plan = 'monthly', onClose } = {}) {
+export async function openCheckout({ email, profileId, plan = 'monthly', onClose, onEvent } = {}) {
   if (!isPaddleConfigured()) {
     return { ok: false, reason: 'not_configured' }
   }
@@ -51,6 +63,7 @@ export async function openCheckout({ email, profileId, plan = 'monthly', onClose
     Paddle.Setup({
       token: PADDLE_CLIENT_TOKEN,
       eventCallback: (e) => {
+        onEvent?.(e)
         if (e?.name === 'checkout.closed' || e?.name === 'checkout.completed') onClose?.(e)
       },
     })

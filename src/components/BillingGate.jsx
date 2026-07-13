@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
@@ -16,6 +16,7 @@ export function BillingGate() {
   const { session, profile, role, isAdmin, isModerator, signOut } = useAuth()
   const { t } = useT()
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const [clientBlockEmail, setClientBlockEmail] = useState(null)
   const [clientChecked, setClientChecked] = useState(false)
   const [paying, setPaying] = useState(false)
@@ -71,9 +72,7 @@ export function BillingGate() {
         <div className="mt-6">
           <PlanButtons onPick={pay} busy={paying} />
         </div>
-        <button onClick={signOut} className="label mt-6 text-faint hover:text-ink transition-colors">
-          {t('billing.signOut')}
-        </button>
+        <GateFooter onSignOut={signOut} onAccount={() => navigate('/account')} t={t} />
       </Overlay>
     )
   }
@@ -90,14 +89,29 @@ export function BillingGate() {
         <a href={`mailto:${clientBlockEmail}`} className="mt-3 block text-sm text-accent hover:underline">
           {clientBlockEmail}
         </a>
-        <button onClick={signOut} className="label mt-6 text-faint hover:text-ink transition-colors">
-          {t('billing.signOut')}
-        </button>
+        <GateFooter onSignOut={signOut} onAccount={() => navigate('/account')} t={t} />
       </Overlay>
     )
   }
 
   return null
+}
+
+// The gate covers the whole panel, so account deletion has to be reachable from
+// inside it — otherwise a lapsed user could never delete their account (which
+// Apple requires to be available in-app).
+function GateFooter({ onSignOut, onAccount, t }) {
+  return (
+    <div className="mt-6 flex items-center justify-center gap-4">
+      <button onClick={onSignOut} className="label text-faint hover:text-ink transition-colors">
+        {t('billing.signOut')}
+      </button>
+      <span className="text-faint">·</span>
+      <button onClick={onAccount} className="label text-faint hover:text-accent transition-colors">
+        {t('account.deleteCta')}
+      </button>
+    </div>
+  )
 }
 
 function Overlay({ children }) {
