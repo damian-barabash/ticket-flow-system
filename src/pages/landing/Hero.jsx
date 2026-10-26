@@ -3,61 +3,130 @@ import { useT } from '../../context/LangContext'
 import { STATUS } from '../../lib/constants'
 import { ArrowRight, reducedMotion } from './kit'
 
-// ── black SVG silhouettes standing in front of the glowing panels ─────────
-const POSES = {
-  // seated, facing the viewer
-  front: (
+// ── flat black illustrations, one scene per ticket (square, Swiss-style) ──
+// Black shapes on the glowing red panel + white accents. `lp-a*` parts animate
+// only on the lit panel (see landing.css), so the row feels alive but calm.
+const K = '#050505'
+const W = '#ffffff'
+const G = '#262626'
+const ART = {
+  // #009 — fix the mobile header: phone, header bar sliding into place
+  phone: (
     <>
-      <ellipse cx="50" cy="20" rx="8.5" ry="10.5" />
-      <rect x="46" y="28" width="8" height="7" />
-      <path d="M36 34L64 34Q72 36 74 44L77 80L70 82L67 56L66 86L34 86L33 56L30 82L23 80L26 44Q28 36 36 34Z" />
-      <path d="M32 84L68 84L71 98L29 98Z" />
-      <path d="M30 96L41 96L40 131L45 137L27 137L31 131Z" />
-      <path d="M59 96L70 96L69 131L73 137L55 137L60 131Z" />
-      <path d="M18 94L82 94L82 99L18 99Z" />
-      <path d="M21 99h3v38h-3zM76 99h3v38h-3z" />
+      <rect x="24" y="14" width="52" height="124" fill={K} />
+      <rect x="29" y="24" width="42" height="104" fill="#141414" />
+      <rect x="44" y="18" width="12" height="2.5" fill={G} />
+      <rect className="lp-a1" x="29" y="24" width="42" height="14" fill={W} />
+      <path className="lp-a1" d="M34 29h8M34 31.5h8M34 34h8" stroke={K} strokeWidth="1.6" />
+      <rect className="lp-a1" x="61" y="28" width="6" height="6" fill="#f2231b" />
+      <rect x="29" y="23" width="42" height="16" fill="none" stroke={W} strokeWidth="1" strokeDasharray="2 2" opacity=".55" />
+      <rect x="34" y="46" width="32" height="20" fill={G} />
+      <rect x="34" y="71" width="26" height="3" fill={G} />
+      <rect x="34" y="77" width="32" height="3" fill={G} />
+      <rect x="34" y="83" width="20" height="3" fill={G} />
+      <rect x="34" y="94" width="14" height="14" fill={G} />
+      <rect x="52" y="94" width="14" height="14" fill={G} />
+      <rect x="44" y="131" width="12" height="3" fill={G} />
     </>
   ),
-  // seated in profile, hand on chin
-  think: (
+  // #011 — new banner on the homepage: browser window with a hero banner
+  banner: (
     <>
-      <ellipse cx="47" cy="21" rx="8.5" ry="10" />
-      <path d="M37 33Q46 30 52 34Q57 38 57 46L60 82L35 84Q32 62 33 46Q34 36 37 33Z" />
-      <path d="M50 38L57 37L67 70L60 73Z" />
-      <path d="M60 73L67 70L59 30L53 32Z" />
-      <path d="M35 76L79 76L79 89L35 89Z" />
-      <path d="M69 86L79 86L81 131L89 137L68 137L71 131Z" />
-      <path d="M24 89L72 89L72 94L24 94Z" />
-      <path d="M26 94h3v43h-3zM66 94h3v43h-3zM23 42h3v52h-3z" />
+      <rect x="6" y="38" width="88" height="100" fill={K} />
+      <rect x="6" y="38" width="88" height="10" fill="#141414" />
+      <rect x="11" y="42" width="3" height="3" fill={W} />
+      <rect x="16" y="42" width="3" height="3" fill={G} />
+      <rect x="21" y="42" width="3" height="3" fill={G} />
+      <rect x="30" y="41.5" width="56" height="4" fill={G} />
+      <g className="lp-a2">
+        <rect x="12" y="54" width="76" height="42" fill={W} />
+        <rect x="18" y="61" width="40" height="7" fill={K} />
+        <rect x="18" y="71" width="28" height="7" fill={K} />
+        <rect x="18" y="84" width="18" height="6" fill="#f2231b" />
+        <path d="M66 62l12 0 0 12-12 0z" fill="#f2231b" />
+        <path d="M60 90l10-14 8 9 4-5 6 10z" fill={K} />
+      </g>
+      <rect x="12" y="103" width="22" height="16" fill={G} />
+      <rect x="39" y="103" width="22" height="16" fill={G} />
+      <rect x="66" y="103" width="22" height="16" fill={G} />
+      <rect x="12" y="124" width="50" height="3" fill={G} />
     </>
   ),
-  // seated in profile, laptop on the knees
-  laptop: (
+  // #012 — reviews section under the prices: three review cards with stars
+  reviews: (
     <>
-      <ellipse cx="45" cy="23" rx="8.5" ry="10" transform="rotate(12 45 23)" />
-      <path d="M36 35Q45 31 51 36Q56 40 56 48L59 82L34 84Q31 62 32 48Q33 38 36 35Z" />
-      <path d="M48 42L54 40L72 64L67 69Z" />
-      <path d="M56 70L84 70L86 74L56 74Z" />
-      <path d="M78 44L84 45L86 72L80 72Z" />
-      <path d="M34 76L78 76L78 89L34 89Z" />
-      <path d="M68 86L78 86L80 131L88 137L67 137L70 131Z" />
-      <path d="M22 89L70 89L70 94L22 94Z" />
-      <path d="M24 94h3v43h-3zM64 94h3v43h-3zM21 42h3v52h-3z" />
+      {[46, 77, 108].map((y, i) => (
+        <g key={y} className={i === 1 ? 'lp-a3' : undefined}>
+          <rect x={i === 1 ? 6 : 14} y={y} width="80" height="27" fill={i === 1 ? W : K} />
+          <rect x={(i === 1 ? 6 : 14) + 6} y={y + 6} width="14" height="14" fill={i === 1 ? K : G} />
+          {[0, 1, 2, 3, 4].map((k) => {
+            const cx = (i === 1 ? 6 : 14) + 28 + k * 8.5
+            const cy = y + 9
+            return (
+              <path
+                key={k}
+                d={`M${cx} ${cy - 3.6}l1.1 2.3 2.5.3-1.8 1.7.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z`}
+                fill={i === 1 ? '#f2231b' : W}
+              />
+            )
+          })}
+          <rect x={(i === 1 ? 6 : 14) + 26} y={y + 16} width="42" height="2.5" fill={i === 1 ? '#bdbdbd' : G} />
+        </g>
+      ))}
+    </>
+  ),
+  // #014 — payment error in Safari: card + warning sign
+  payment: (
+    <>
+      <path className="lp-a4" d="M50 22l22 38H28z" fill={W} />
+      <rect className="lp-a4" x="48" y="35" width="4" height="13" fill={K} />
+      <rect className="lp-a4" x="48" y="51" width="4" height="4" fill={K} />
+      <g transform="rotate(-8 50 104)">
+        <rect x="10" y="78" width="80" height="52" fill={K} />
+        <rect x="10" y="86" width="80" height="9" fill={G} />
+        <rect x="18" y="102" width="13" height="10" fill={W} />
+        <path d="M18 107h13M24.5 102v10" stroke={K} strokeWidth="1" />
+        <rect x="18" y="119" width="9" height="3" fill={W} />
+        <rect x="30" y="119" width="9" height="3" fill={W} />
+        <rect x="42" y="119" width="9" height="3" fill={W} />
+        <rect x="54" y="119" width="9" height="3" fill="#f2231b" />
+        <rect x="72" y="104" width="10" height="10" fill="#f2231b" />
+        <rect x="68" y="104" width="10" height="10" fill="none" stroke={W} strokeWidth="1.2" />
+      </g>
+    </>
+  ),
+  // #015 — release v1.2: rocket lifting off
+  release: (
+    <>
+      <g className="lp-a5">
+        <path d="M50 14l13 20v58H37V34z" fill={K} />
+        <path d="M37 66L24 84v14l13-6zM63 66l13 18v14l-13-6z" fill={K} />
+        <rect x="44" y="42" width="12" height="12" fill={W} />
+        <rect x="47" y="45" width="6" height="6" fill="#f2231b" />
+        <rect x="41" y="62" width="18" height="5" fill={G} />
+        <text x="50" y="82" textAnchor="middle" fontSize="8" fontWeight="800" fill={W} fontFamily="Inter Tight, Inter, sans-serif">v1.2</text>
+        <path className="lp-flame" d="M41 92h18l-4 16-5-6-5 6z" fill={W} />
+      </g>
+      <rect x="22" y="112" width="3" height="18" fill={K} opacity=".55" />
+      <rect x="75" y="104" width="3" height="24" fill={K} opacity=".55" />
+      <rect x="12" y="122" width="3" height="12" fill={K} opacity=".35" />
+      <rect x="86" y="118" width="3" height="16" fill={K} opacity=".35" />
+      <rect x="0" y="134" width="100" height="4" fill={K} />
     </>
   ),
 }
 const LINEUP = [
-  { pose: 'laptop', flip: false, depth: 1.3 },
-  { pose: 'think', flip: false, depth: 0.7 },
-  { pose: 'front', flip: false, depth: 0.25 },
-  { pose: 'think', flip: true, depth: 0.7 },
-  { pose: 'laptop', flip: true, depth: 1.3 },
+  { art: 'phone', depth: 1.3 },
+  { art: 'banner', depth: 0.7 },
+  { art: 'reviews', depth: 0.25 },
+  { art: 'payment', depth: 0.7 },
+  { art: 'release', depth: 1.3 },
 ]
 
-function Silhouette({ pose, flip }) {
+function Art({ name }) {
   return (
-    <svg viewBox="0 0 100 140" fill="#050505" aria-hidden="true" style={flip ? { transform: 'scaleX(-1)' } : undefined}>
-      {POSES[pose]}
+    <svg viewBox="0 0 100 140" aria-hidden="true" shapeRendering="crispEdges">
+      {ART[name]}
     </svg>
   )
 }
@@ -82,7 +151,7 @@ function Panel({ p, cfg, lit, onEnter, t, reflect = false }) {
       )}
       <div className="lp-perf" />
       <div className="lp-sil">
-        <Silhouette pose={cfg.pose} flip={cfg.flip} />
+        <Art name={cfg.art} />
       </div>
     </div>
   )

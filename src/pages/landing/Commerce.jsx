@@ -105,26 +105,70 @@ export function Pricing({ go, onEnterprise }) {
 }
 
 // ── apps ─────────────────────────────────────────────────────────────────
-function StoreTile({ href, top, name, status, live, onClick }) {
+// Store badges: official marks (Apple, Google Play, Windows) in our square frame.
+const APPLE = 'M16.37 12.6c-.02-2.23 1.82-3.3 1.9-3.35-1.04-1.52-2.65-1.73-3.22-1.75-1.37-.14-2.68.81-3.37.81-.7 0-1.77-.79-2.9-.77-1.49.02-2.87.87-3.64 2.2-1.55 2.69-.4 6.67 1.11 8.85.74 1.07 1.62 2.27 2.77 2.22 1.11-.04 1.53-.72 2.88-.72 1.34 0 1.72.72 2.9.7 1.2-.02 1.96-1.09 2.69-2.16.85-1.24 1.2-2.44 1.22-2.5-.03-.01-2.33-.9-2.34-3.53zM14.16 6.06c.61-.74 1.03-1.77.91-2.8-.88.04-1.95.59-2.58 1.33-.57.66-1.07 1.71-.93 2.72.98.08 1.99-.5 2.6-1.25z'
+function MarkApple({ s = 30 }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+      <path d={APPLE} />
+    </svg>
+  )
+}
+function MarkPlay({ s = 28 }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3.6 1.8C3.2 2 3 2.4 3 2.9v18.2c0 .5.2.9.6 1.1L13.4 12z" fill="#00A0FF" />
+      <path d="M3.6 1.8c.3-.2.8-.2 1.3.1l11.7 6.7-3.2 3.4z" fill="#00F076" />
+      <path d="M13.4 12l3.2 3.4-11.7 6.7c-.5.3-1 .3-1.3.1z" fill="#FF3A44" />
+      <path d="M16.6 8.6l3.8 2.2c1 .6 1 1.8 0 2.4l-3.8 2.2-3.2-3.4z" fill="#FFD500" />
+    </svg>
+  )
+}
+function MarkWindows({ s = 22 }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="#fff" aria-hidden="true" shapeRendering="crispEdges">
+      <path d="M2 2h9v9H2zM13 2h9v9h-9zM2 13h9v9H2zM13 13h9v9h-9z" />
+    </svg>
+  )
+}
+const MARKS = {
+  apple: <MarkApple />,
+  play: <MarkPlay />,
+  desktop: (
+    <span className="flex items-center gap-2">
+      <MarkApple s={24} />
+      <MarkWindows />
+    </span>
+  ),
+  web: <Icon name="globe" size={28} className="text-white" />,
+}
+
+function StoreTile({ href, mark, small, name, status, live, onClick }) {
   const Tag = href ? 'a' : onClick ? 'button' : 'div'
   const props = href ? { href, target: '_blank', rel: 'noopener noreferrer' } : onClick ? { onClick, type: 'button' } : {}
+  const active = !!(href || onClick)
   return (
     <Tag
       {...props}
-      className="group flex min-h-[72px] items-center justify-between gap-4 border border-[#3a3a3a] px-5 transition-colors duration-150 hover:border-white hover:bg-[#111]"
+      className={`group relative flex min-h-[76px] items-center justify-between gap-4 border bg-black px-5 py-3 transition-colors duration-150 ${
+        active ? 'border-[#4a4a4a] hover:border-white hover:bg-[#0d0d0d]' : 'border-[#2a2a2a]'
+      }`}
     >
-      <span className="flex items-center gap-4">
-        <Icon name={top} size={24} className="text-white" />
-        <span className="text-left">
-          <span className="block text-[18px] font-bold leading-tight text-white">{name}</span>
-          <span className={`text-[12px] font-bold uppercase tracking-[0.08em] ${live ? 'text-[#46C864]' : 'text-[#f2231b]'}`}>{status}</span>
+      <span className="flex min-w-0 items-center gap-4">
+        <span className={`flex w-[52px] shrink-0 justify-center ${active ? '' : 'opacity-80'}`}>{MARKS[mark]}</span>
+        <span className="min-w-0 text-left leading-none">
+          {small && <span className="block text-[12px] font-medium text-[#b4b4b4]">{small}</span>}
+          <span className="mt-1 block whitespace-nowrap text-[20px] font-semibold tracking-[-0.01em] text-white">{name}</span>
         </span>
       </span>
-      {(href || onClick) && (
-        <span className="text-[#787878] transition-transform duration-150 group-hover:translate-x-1 group-hover:text-white">
-          <ArrowRight />
-        </span>
-      )}
+      <span className={`absolute right-3 top-2.5 text-[11px] font-bold uppercase tracking-[0.1em] ${live ? 'text-[#46C864]' : 'text-[#f2231b]'}`}>{status}</span>
+      <span className="flex shrink-0 items-center self-end pb-1">
+        {active && (
+          <span className="text-[#787878] transition-transform duration-150 group-hover:translate-x-1 group-hover:text-white">
+            <ArrowRight />
+          </span>
+        )}
+      </span>
     </Tag>
   )
 }
@@ -210,11 +254,11 @@ export function Apps({ go }) {
               </R>
             ))}
           </ul>
-          <R className="grid gap-3 sm:grid-cols-2">
-            <StoreTile href={APP_STORE} top="phone" name={t('landing.app.appStore')} status={t('landing.app.live')} live />
-            <StoreTile href={GOOGLE_PLAY} top="phone" name={t('landing.app.googlePlay')} status={t('landing.app.soon')} />
-            <StoreTile top="grid" name={t('landing.app.desktop')} status={t('landing.app.soon')} />
-            <StoreTile top="globe" name={t('landing.app.web')} status="ticketflow.pl" live onClick={() => go('/register')} />
+          <R className="grid gap-3 xl:grid-cols-2">
+            <StoreTile href={APP_STORE} mark="apple" small={t('landing.app.dlApple')} name={t('landing.app.appStore')} status={t('landing.app.live')} live />
+            <StoreTile href={GOOGLE_PLAY} mark="play" small={t('landing.app.dlPlay')} name={t('landing.app.googlePlay')} status={t('landing.app.soon')} />
+            <StoreTile mark="desktop" small={t('landing.app.dlDesktop')} name="macOS · Windows" status={t('landing.app.soon')} />
+            <StoreTile mark="web" small="ticketflow.pl" name={t('landing.app.web')} status={t('landing.app.live')} live onClick={() => go('/register')} />
           </R>
         </div>
         <R d={1} className="py-4">

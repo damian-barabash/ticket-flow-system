@@ -265,3 +265,20 @@
   .ll > span { transform: none; }
   .lp-col { transform: none !important; }
 }
+
+/* hero ticket illustrations: tiny loops only on the lit panel */
+.lp-sil svg [class^="lp-a"], .lp-sil svg .lp-flame { transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .lp-panel:not(.dim) .lp-a1 { animation: lpSlide 2.4s cubic-bezier(.2,.8,.2,1) infinite; }
+  .lp-panel:not(.dim) .lp-a2 { animation: lpPop 2.4s cubic-bezier(.2,.8,.2,1) infinite; }
+  .lp-panel:not(.dim) .lp-a3 { animation: lpNudge 2.4s cubic-bezier(.2,.8,.2,1) infinite; }
+  .lp-panel:not(.dim) .lp-a4 { animation: lpBlink 0.8s steps(2, jump-none) infinite; }
+  .lp-panel:not(.dim) .lp-a5 { animation: lpLift 2.4s cubic-bezier(.2,.8,.2,1) infinite; }
+  .lp-panel:not(.dim) .lp-flame { animation: lpFlame .18s linear infinite alternate; }
+}
+@keyframes lpSlide { 0% { transform: translateY(-14px); opacity: 0 } 25%,100% { transform: none; opacity: 1 } }
+@keyframes lpPop { 0% { transform: scale(.92); opacity: .2 } 22%,100% { transform: none; opacity: 1 } }
+@keyframes lpNudge { 0% { transform: translateX(-8px) } 20%,100% { transform: none } }
+@keyframes lpBlink { 0% { opacity: 1 } 100% { opacity: .25 } }
+@keyframes lpLift { 0%,100% { transform: none } 50% { transform: translateY(-5px) } }
+@keyframes lpFlame { from { transform: scaleY(1) } to { transform: scaleY(.7) } }

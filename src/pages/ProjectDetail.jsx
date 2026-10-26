@@ -579,8 +579,8 @@ export default function ProjectDetail() {
     <>
       {/* header */}
       <section className="page-in mb-7">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="flex min-w-0 items-start gap-4">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-w-0 flex-1 items-start gap-4">
             {project.cover_url && (
               <div className="hidden h-[72px] w-[72px] shrink-0 overflow-hidden border border-line sm:block">
                 <img src={project.cover_url} alt="" className="h-full w-full object-cover" decoding="async" />
@@ -588,13 +588,16 @@ export default function ProjectDetail() {
             )}
             <div className="min-w-0">
               <span className="tag text-muted">{t('project.label')}</span>
-              <h1 className={`display mt-2 break-words text-ink ${split ? 'text-[40px] xl:text-[52px]' : 'text-[40px] sm:text-[56px] lg:text-[68px]'}`}>
+              <h1
+                title={project.name}
+                className={`display mt-2 break-words text-ink lg:truncate lg:pb-1 ${split ? 'text-[40px] lg:text-[44px] xl:text-[52px]' : 'text-[40px] sm:text-[56px] lg:text-[52px] 2xl:text-[68px]'}`}
+              >
                 {project.name}
               </h1>
               {project.description && <p className="mt-3 max-w-2xl text-[15px] text-muted">{project.description}</p>}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 lg:shrink-0 lg:flex-nowrap">
             <button
               onClick={() => navigate(`/calendar?project=${id}`)}
               onMouseEnter={() => prefetch(loadCalendar)}
