@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
   try {
     const r = await fetch(
-      `${URL_}/rest/v1/email_verifications?email=eq.${encodeURIComponent(email)}&order=created_at.desc&limit=1`,
+      `${URL_}/rest/v1/email_verifications?email=eq.${encodeURIComponent(email)}&purpose=eq.register&order=created_at.desc&limit=1`,
       { headers: { apikey: SR, Authorization: `Bearer ${SR}` } },
     )
     const rows = await r.json().catch(() => [])
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
     }
 
     // Clean up codes for this email.
-    await fetch(`${URL_}/rest/v1/email_verifications?email=eq.${encodeURIComponent(email)}`, {
+    await fetch(`${URL_}/rest/v1/email_verifications?email=eq.${encodeURIComponent(email)}&purpose=eq.register`, {
       method: 'DELETE',
       headers: { apikey: SR, Authorization: `Bearer ${SR}`, Prefer: 'return=minimal' },
     })

@@ -144,6 +144,7 @@ Deno.serve(async (req) => {
     for (const pid of projects) {
       await removeObjects('project-covers', await listObjects('project-covers', `${pid}/`))
       await removeObjects('project-files', await listObjects('project-files', `${pid}/`))
+      await removeObjects('chat-media', await listObjects('chat-media', `${pid}/`))
     }
     for (const tid of tickets) {
       await removeObjects('ticket-media', await listObjects('ticket-media', `${tid}/`))

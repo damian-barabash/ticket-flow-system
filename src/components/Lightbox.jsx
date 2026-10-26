@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { isDisplayableImage, formatLabel } from '../lib/files'
 import { useT } from '../context/LangContext'
+import { Icon, useEsc } from './ui'
 
 // Конвертирует любую отображаемую картинку в PNG-blob через canvas
 // (clipboard.write принимает только image/png кросс-браузерно).
@@ -20,9 +22,11 @@ export function Lightbox({ images, index, onClose, onNav }) {
   const [copyState, setCopyState] = useState('idle') // idle | copied | failed
   const [busy, setBusy] = useState(false)
 
+  // Esc goes through the shared layer stack, so it closes ONLY the lightbox
+  // (not the drawer underneath).
+  useEsc(onClose, true)
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') onClose()
       if (e.key === 'ArrowRight') onNav(1)
       if (e.key === 'ArrowLeft') onNav(-1)
     }
@@ -81,64 +85,52 @@ export function Lightbox({ images, index, onClose, onNav }) {
 
   const stop = (e) => e.stopPropagation()
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
+      className="fade-in fixed inset-0 z-[110] flex items-center justify-center bg-black/95 p-4"
       onClick={onClose}
+      onMouseDown={stop}
+      role="dialog"
+      aria-modal="true"
     >
       {/* Тулбар: скачать / копировать / закрыть. onContextMenu гасим, чтобы клик мимо не закрывал. */}
       <div className="absolute right-3 top-3 z-10 flex items-center gap-2" onClick={stop} onContextMenu={stop}>
-        <button
-          className="btn-ghost px-3 py-1.5 text-xs"
-          onClick={download}
-          disabled={busy}
-          aria-label={t('file.download')}
-        >
-          ⤓ {t('file.download')}
+        <button className="btn-ghost btn-sm bg-bg/80" onClick={download} disabled={busy} aria-label={t('file.download')}>
+          <Icon name="download" size={16} /> <span className="hidden sm:inline">{t('file.download')}</span>
         </button>
         {canCopy && (
-          <button
-            className="btn-ghost px-3 py-1.5 text-xs"
-            onClick={copy}
-            disabled={busy}
-            aria-label={t('file.copy')}
-          >
-            {copyState === 'copied'
-              ? `✓ ${t('file.copied')}`
-              : copyState === 'failed'
-                ? t('file.copyFailed')
-                : `⧉ ${t('file.copy')}`}
+          <button className="btn-ghost btn-sm bg-bg/80" onClick={copy} disabled={busy} aria-label={t('file.copy')}>
+            <Icon name={copyState === 'copied' ? 'check' : copyState === 'failed' ? 'alert' : 'copy'} size={16} />
+            <span className="hidden sm:inline">
+              {copyState === 'copied' ? t('file.copied') : copyState === 'failed' ? t('file.copyFailed') : t('file.copy')}
+            </span>
           </button>
         )}
-        <button
-          className="px-2 text-2xl text-muted hover:text-ink"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          ✕
+        <button className="icon-btn border-line2 bg-bg/80 text-ink" onClick={onClose} aria-label={t('common.close')} title={t('common.close') + ' (Esc)'}>
+          <Icon name="close" size={20} />
         </button>
       </div>
       {images.length > 1 && (
         <>
           <button
-            className="absolute left-3 top-1/2 -translate-y-1/2 px-3 py-4 text-2xl text-muted hover:text-ink"
+            className="icon-btn absolute left-3 top-1/2 z-10 h-12 w-12 -translate-y-1/2 border-line2 bg-bg/80 text-ink"
             onClick={(e) => {
               e.stopPropagation()
               onNav(-1)
             }}
             aria-label={t('common.back')}
           >
-            ‹
+            <Icon name="back" size={22} />
           </button>
           <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 px-3 py-4 text-2xl text-muted hover:text-ink"
+            className="icon-btn absolute right-3 top-1/2 z-10 h-12 w-12 -translate-y-1/2 border-line2 bg-bg/80 text-ink"
             onClick={(e) => {
               e.stopPropagation()
               onNav(1)
             }}
             aria-label={t('common.forward')}
           >
-            ›
+            <Icon name="forward" size={22} />
           </button>
         </>
       )}
@@ -154,17 +146,18 @@ export function Lightbox({ images, index, onClose, onNav }) {
           className="flex flex-col items-center gap-4 border border-line bg-surface px-8 py-10 text-center"
           onClick={stop}
         >
-          <span className="font-mono uppercase tracking-label text-sm text-muted">{formatLabel(cur)}</span>
-          <p className="max-w-[60vw] break-all text-sm text-ink/90">{cur?.name || t('file.fileName')}</p>
-          <p className="label-sm text-faint">{t('file.cantDisplay')}</p>
+          <span className="num text-[15px] uppercase text-muted">{formatLabel(cur)}</span>
+          <p className="max-w-[60vw] break-all text-[15px] text-ink/90">{cur?.name || t('file.fileName')}</p>
+          <p className="text-[13px] text-faint">{t('file.cantDisplay')}</p>
           <a href={src} target="_blank" rel="noreferrer" className="btn-solid">
             {t('file.openFile')}
           </a>
         </div>
       )}
-      <span className="absolute bottom-4 left-1/2 -translate-x-1/2 label">
+      <span className="num absolute bottom-4 left-1/2 -translate-x-1/2 bg-bg/80 px-2 py-1 text-[13px] text-ink">
         {index + 1} / {images.length}
       </span>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { entitlement } from '../lib/billing'
-import { openCheckout } from '../lib/paddle'
+import { openCheckout, pollUntilActive } from '../lib/paddle'
+import { Icon, Spinner } from './ui'
 import { PlanButtons } from './PlanButtons'
 import { LogoMark } from './Logo'
 
@@ -13,13 +14,19 @@ import { LogoMark } from './Logo'
 //   client → "account inactive, contact your admin" + admin email
 // Moderators are never gated. Only shown on panel routes.
 export function BillingGate() {
-  const { session, profile, role, isAdmin, isModerator, signOut } = useAuth()
+  const { session, profile, role, isAdmin, isModerator, signOut, reloadProfile } = useAuth()
   const { t } = useT()
   const { pathname } = useLocation()
   const navigate = useNavigate()
   const [clientBlockEmail, setClientBlockEmail] = useState(null)
   const [clientChecked, setClientChecked] = useState(false)
   const [paying, setPaying] = useState(false)
+  const [activating, setActivating] = useState(false)
+  const [notice, setNotice] = useState('')
+  const profRef = useRef(profile)
+  profRef.current = profile
+  const stopPoll = useRef(null)
+  useEffect(() => () => stopPoll.current?.(), [])
 
   // Client gating: block only if EVERY owner-admin of the client's projects has lapsed.
   useEffect(() => {
@@ -50,14 +57,26 @@ export function BillingGate() {
     }
   }, [role, session?.user?.id])
 
-  const onPanel = /^\/(projects|workspaces|admin)/.test(pathname)
+  const onPanel = /^\/(projects|workspaces|admin|calendar)/.test(pathname)
   if (!session || isModerator || !onPanel) return null
 
   async function pay(plan) {
     setPaying(true)
-    const r = await openCheckout({ email: profile?.email, profileId: profile?.id, plan })
+    setNotice('')
+    const r = await openCheckout({
+      email: profile?.email,
+      profileId: profile?.id,
+      plan,
+      // the webhook flips the profile a few seconds after payment → poll until it does
+      onEvent: (e) => {
+        if (e?.name !== 'checkout.completed') return
+        setActivating(true)
+        stopPoll.current?.()
+        stopPoll.current = pollUntilActive(reloadProfile, () => entitlement(profRef.current).active)
+      },
+    })
     setPaying(false)
-    if (!r.ok && r.reason === 'not_configured') alert(t('billing.notConfigured'))
+    if (!r.ok) setNotice(r.reason === 'not_configured' ? t('billing.notConfigured') : t('checkout.errorBody'))
   }
 
   // Admin whose trial ended and isn't paid.
@@ -66,12 +85,19 @@ export function BillingGate() {
     if (ent.active) return null
     return (
       <Overlay>
-        <LogoMark size={44} />
-        <h2 className="mt-5 text-xl font-semibold text-ink">{t('billing.unpaidTitle')}</h2>
-        <p className="mx-auto mt-2 max-w-[380px] text-sm text-muted">{t('billing.unpaidBody')}</p>
-        <div className="mt-6">
-          <PlanButtons onPick={pay} busy={paying} />
+        <LogoMark size={48} />
+        <h2 className="display mt-6 text-[36px] text-ink">{activating ? t('panel.activating') : t('billing.unpaidTitle')}</h2>
+        <p className="mx-auto mt-3 max-w-[380px] text-[15px] text-muted">{activating ? t('checkout.doneBody') : t('billing.unpaidBody')}</p>
+        <div className="mt-7">
+          {activating ? (
+            <div className="flex items-center justify-center gap-3 text-[15px] text-muted">
+              <Spinner /> {t('panel.activatingHint')}
+            </div>
+          ) : (
+            <PlanButtons onPick={pay} busy={paying} />
+          )}
         </div>
+        {notice && <p className="mt-4 text-[14px] text-accent">{notice}</p>}
         <GateFooter onSignOut={signOut} onAccount={() => navigate('/account')} t={t} />
       </Overlay>
     )
@@ -83,11 +109,11 @@ export function BillingGate() {
     if (!clientBlockEmail) return null
     return (
       <Overlay>
-        <LogoMark size={44} />
-        <h2 className="mt-5 text-xl font-semibold text-ink">{t('billing.clientTitle')}</h2>
-        <p className="mx-auto mt-2 max-w-[380px] text-sm text-muted">{t('billing.clientBody')}</p>
-        <a href={`mailto:${clientBlockEmail}`} className="mt-3 block text-sm text-accent hover:underline">
-          {clientBlockEmail}
+        <LogoMark size={48} />
+        <h2 className="display mt-6 text-[36px] text-ink">{t('billing.clientTitle')}</h2>
+        <p className="mx-auto mt-3 max-w-[380px] text-[15px] text-muted">{t('billing.clientBody')}</p>
+        <a href={`mailto:${clientBlockEmail}`} className="btn-link mt-4 text-[15px]">
+          <Icon name="mail" size={16} /> {clientBlockEmail}
         </a>
         <GateFooter onSignOut={signOut} onAccount={() => navigate('/account')} t={t} />
       </Overlay>
@@ -102,13 +128,12 @@ export function BillingGate() {
 // Apple requires to be available in-app).
 function GateFooter({ onSignOut, onAccount, t }) {
   return (
-    <div className="mt-6 flex items-center justify-center gap-4">
-      <button onClick={onSignOut} className="label text-faint hover:text-ink transition-colors">
-        {t('billing.signOut')}
+    <div className="mt-8 grid grid-cols-2 border-t border-line pt-5">
+      <button onClick={onSignOut} className="btn-quiet btn-sm justify-center">
+        <Icon name="logout" size={15} /> {t('billing.signOut')}
       </button>
-      <span className="text-faint">·</span>
-      <button onClick={onAccount} className="label text-faint hover:text-accent transition-colors">
-        {t('account.deleteCta')}
+      <button onClick={onAccount} className="btn-quiet btn-sm justify-center hover:!text-accent">
+        <Icon name="user" size={15} /> {t('topbar.account')}
       </button>
     </div>
   )
@@ -116,8 +141,8 @@ function GateFooter({ onSignOut, onAccount, t }) {
 
 function Overlay({ children }) {
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-bg/95 p-4 backdrop-blur-sm">
-      <div className="dotgrid w-full max-w-[440px] border border-line bg-surface p-8 text-center shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)]">
+    <div className="fade-in fixed inset-0 z-[90] flex items-center justify-center overflow-y-auto bg-[radial-gradient(120%_80%_at_50%_120%,rgba(242,35,27,0.3),rgba(6,6,6,0.97)_60%)] p-4">
+      <div className="pop w-full max-w-[460px] border border-line bg-surface p-7 text-center sm:p-9">
         {children}
       </div>
     </div>

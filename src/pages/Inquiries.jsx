@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
-import { Spinner, EmptyState } from '../components/ui'
+import { EmptyState, ErrorState, Icon, Skeleton, useConfirm, useToast } from '../components/ui'
 import { formatDate, timeAgo } from '../lib/format'
+import { channelName } from '../lib/realtime'
+import { errText } from '../lib/errors'
+import { PageHeader } from './Projects'
 
 const STATUSES = ['new', 'contacted', 'closed']
 const STATUS_COLOR = {
@@ -16,77 +18,88 @@ const STATUS_COLOR = {
 // Moderator-only window: Enterprise inquiries submitted from the landing form.
 // RLS already restricts SELECT to moderators; the route is moderator-gated too.
 export default function Inquiries() {
-  const navigate = useNavigate()
   const { t } = useT()
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
+  const toast = useToast()
+  const confirm = useConfirm()
+  const [items, setItems] = useState(null)
+  const [error, setError] = useState(null)
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('enterprise_inquiries')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data, error: e } = await supabase.from('enterprise_inquiries').select('*').order('created_at', { ascending: false })
+    if (e) return setError(e)
+    setError(null)
     setItems(data ?? [])
-    setLoading(false)
   }, [])
 
   useEffect(() => {
     load()
     const ch = supabase
-      .channel('enterprise_inquiries')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'enterprise_inquiries' }, load)
+      .channel(channelName('enterprise_inquiries'))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'enterprise_inquiries' }, ({ new: r }) =>
+        setItems((xs) => (xs && !xs.some((x) => x.id === r.id) ? [r, ...xs] : xs)),
+      )
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'enterprise_inquiries' }, ({ new: r }) =>
+        setItems((xs) => xs && xs.map((x) => (x.id === r.id ? { ...x, ...r } : x))),
+      )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'enterprise_inquiries' }, ({ old }) =>
+        setItems((xs) => xs && xs.filter((x) => x.id !== old.id)),
+      )
       .subscribe()
-    return () => supabase.removeChannel(ch)
+    return () => {
+      supabase.removeChannel(ch)
+    }
   }, [load])
 
   async function setStatus(item, status) {
     if (item.status === status) return
-    // Optimistic update, then persist.
     setItems((xs) => xs.map((x) => (x.id === item.id ? { ...x, status } : x)))
-    const { error } = await supabase.from('enterprise_inquiries').update({ status }).eq('id', item.id)
-    if (error) load()
+    const { error: e } = await supabase.from('enterprise_inquiries').update({ status }).eq('id', item.id)
+    if (e) {
+      setItems((xs) => xs.map((x) => (x.id === item.id ? { ...x, status: item.status } : x)))
+      toast.show(errText(t, e), { tone: 'error' })
+    }
   }
 
   async function remove(item) {
-    if (!confirm(t('inquiries.confirmDelete', { email: item.email }))) return
+    const ok = await confirm({ title: t('inquiries.remove'), body: t('inquiries.confirmDelete', { email: item.email }), danger: true, confirmLabel: t('common.delete') })
+    if (!ok) return
+    const before = items
     setItems((xs) => xs.filter((x) => x.id !== item.id))
-    const { error } = await supabase.from('enterprise_inquiries').delete().eq('id', item.id)
-    if (error) load()
+    const { error: e } = await supabase.from('enterprise_inquiries').delete().eq('id', item.id)
+    if (e) {
+      setItems(before)
+      toast.show(errText(t, e), { tone: 'error' })
+    }
   }
 
-  const newCount = items.filter((x) => x.status === 'new').length
+  const newCount = (items ?? []).filter((x) => x.status === 'new').length
 
   return (
-    <div className="min-h-screen">
-      <TopBar />
-      <main className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 sm:py-8">
-        <button onClick={() => navigate('/projects')} className="label mb-5 hover:text-ink transition-colors">
-          {t('inquiries.toProjects')}
-        </button>
-
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <span className="label">{t('inquiries.label')} · MMXXVI</span>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t('inquiries.heading')}</h1>
-            <p className="mt-1 text-sm text-faint">{t('inquiries.sub')}</p>
-          </div>
+    <div className="min-h-screen bg-bg">
+      <TopBar crumbs={[{ label: t('topbar.inquiries') }]} />
+      <main className="mx-auto max-w-[1000px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+        <PageHeader tag={t('inquiries.label')} title={t('inquiries.heading')} sub={t('inquiries.sub')}>
           {newCount > 0 && (
-            <span className="shrink-0 border border-accent/45 bg-accentSoft px-2.5 py-1 font-mono text-[11px] uppercase tracking-label text-accent">
+            <span className="border border-accent bg-accent px-3 py-1.5 text-[13px] font-bold uppercase tracking-[0.06em] text-white">
               {t('inquiries.countNew', { n: newCount })}
             </span>
           )}
-        </div>
+        </PageHeader>
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Spinner className="h-6 w-6" />
+        {error && !items ? (
+          <ErrorState message={errText(t, error, 'common.loadError')} onRetry={load} />
+        ) : !items ? (
+          <div className="space-y-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-40 w-full" />
+            ))}
           </div>
         ) : items.length === 0 ? (
-          <EmptyState title={t('inquiries.empty')} hint={t('inquiries.emptyHint')} />
+          <EmptyState icon="inbox" title={t('inquiries.empty')} hint={t('inquiries.emptyHint')} />
         ) : (
-          <ul className="space-y-4">
-            {items.map((it) => (
-              <InquiryCard key={it.id} item={it} onStatus={setStatus} onRemove={remove} />
+          <ul className="space-y-3">
+            {items.map((it, i) => (
+              <InquiryCard key={it.id} index={i} item={it} onStatus={setStatus} onRemove={remove} />
             ))}
           </ul>
         )}
@@ -95,7 +108,7 @@ export default function Inquiries() {
   )
 }
 
-function InquiryCard({ item, onStatus, onRemove }) {
+function InquiryCard({ item, index, onStatus, onRemove }) {
   const { t } = useT()
   const statusLabel = {
     new: t('inquiries.statusNew'),
@@ -103,36 +116,36 @@ function InquiryCard({ item, onStatus, onRemove }) {
     closed: t('inquiries.statusClosed'),
   }
   return (
-    <li className={`border border-line bg-surface p-5 ${item.status === 'new' ? 'border-l-2 border-l-accent' : ''}`}>
+    <li className={`card-in border border-line bg-surface p-5 ${item.status === 'new' ? 'border-l-4 border-l-accent' : ''}`} style={{ '--i': index }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-[15px] font-medium text-ink">{item.company || t('inquiries.noCompany')}</div>
-          {item.name && <div className="mt-0.5 truncate text-sm text-muted">{item.name}</div>}
+          <div className="truncate font-display text-[20px] font-bold uppercase tracking-tight text-ink">{item.company || t('inquiries.noCompany')}</div>
+          {item.name && <div className="mt-0.5 truncate text-[15px] text-muted">{item.name}</div>}
         </div>
         <span
-          className={`shrink-0 border px-2 py-0.5 font-mono text-[10px] uppercase tracking-label ${STATUS_COLOR[item.status] || STATUS_COLOR.new}`}
+          className={`shrink-0 border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.06em] ${STATUS_COLOR[item.status] || STATUS_COLOR.new}`}
         >
           {statusLabel[item.status] || item.status}
         </span>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-        <a href={`mailto:${item.email}`} className="text-accent hover:underline">
-          {item.email}
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[15px]">
+        <a href={`mailto:${item.email}`} className="flex items-center gap-1.5 text-accent hover:underline">
+          <Icon name="mail" size={15} /> {item.email}
         </a>
         {item.phone && (
-          <a href={`tel:${item.phone}`} className="text-muted hover:text-ink">
-            {item.phone}
+          <a href={`tel:${item.phone}`} className="flex items-center gap-1.5 text-muted hover:text-ink">
+            <Icon name="phone" size={15} /> {item.phone}
           </a>
         )}
       </div>
 
       {item.message && (
-        <p className="mt-3 whitespace-pre-wrap border-l border-line pl-3 text-sm leading-relaxed text-muted">{item.message}</p>
+        <p className="mt-3 whitespace-pre-wrap border-l-2 border-line2 pl-3 text-[15px] leading-relaxed text-ink/85">{item.message}</p>
       )}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
-        <span className="label-sm text-faint" title={formatDate(item.created_at)}>
+        <span className="text-[13px] text-muted" title={formatDate(item.created_at)}>
           {t('inquiries.received')}: {timeAgo(item.created_at)}
         </span>
         <div className="flex flex-wrap items-center gap-2">
@@ -140,18 +153,16 @@ function InquiryCard({ item, onStatus, onRemove }) {
             <button
               key={s}
               onClick={() => onStatus(item, s)}
-              className={`border px-2.5 py-1 text-[11px] transition-colors ${
-                item.status === s ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
-              }`}
+              className={`chip press ${item.status === s ? 'chip-on' : ''}`}
             >
               {statusLabel[s]}
             </button>
           ))}
-          <a href={`mailto:${item.email}`} className="label-sm text-legend hover:text-ink">
-            {t('inquiries.reply')}
+          <a href={`mailto:${item.email}`} className="btn-ghost btn-sm">
+            <Icon name="reply" size={15} /> {t('inquiries.reply')}
           </a>
-          <button onClick={() => onRemove(item)} className="label-sm text-faint hover:text-accent">
-            {t('inquiries.remove')}
+          <button onClick={() => onRemove(item)} className="icon-btn-sm hover:!text-accent" title={t('inquiries.remove')} aria-label={t('inquiries.remove')}>
+            <Icon name="trash" size={16} />
           </button>
         </div>
       </div>

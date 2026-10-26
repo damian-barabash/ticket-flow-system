@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -6,136 +6,202 @@ import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
 import { ProjectFormModal } from '../components/ProjectFormModal'
 import { WorkspaceFormModal } from '../components/WorkspaceFormModal'
-import { CalendarModal } from '../components/CalendarModal'
-import { Spinner, EmptyState, IconCalendar } from '../components/ui'
+import { EmptyState, ErrorState, Icon, Segmented, Skeleton, CountBadge, useConfirm, useToast } from '../components/ui'
 import { Tour } from '../components/Tour'
+import { useChatUnread } from '../lib/chat'
+import { channelName, useDebounced } from '../lib/realtime'
+import { loadProjectDetail, prefetch } from '../lib/prefetch'
+import { errText } from '../lib/errors'
 
-function ProjectCard({ project, index, counts, onOpen, tour }) {
-  const { t } = useT()
-  const open = counts?.open ?? 0
-  const done = counts?.done ?? 0
+// Last payload survives navigation → returning to the grid is instant, then
+// refreshed silently in the background.
+let cache = null
+
+export function initials(name = '') {
   return (
-    <button
-      onClick={onOpen}
-      data-tour={tour ? 'project-card' : undefined}
-      className="group brackets relative flex flex-col overflow-hidden border border-line bg-surface text-left transition-colors hover:border-line2"
-    >
-      <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface2">
-        {project.cover_url ? (
-          <img
-            src={project.cover_url}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="dotgrid h-full w-full" />
-        )}
-        {index != null && (
-          <span className="absolute left-3 top-3 label bg-bg/70 px-1.5 py-0.5">
-            № {String(index + 1).padStart(2, '0')}
-          </span>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="text-[15px] font-medium text-ink">{project.name}</h3>
-        {project.description && <p className="mt-1.5 line-clamp-2 text-xs text-faint">{project.description}</p>}
-        <div className="mt-4 flex items-center gap-4 border-t border-line pt-3">
-          <span className="flex items-center gap-1.5 label">
-            <span className="inline-block h-1.5 w-1.5 bg-accent" />
-            {t('projects.open', { n: open })}
-          </span>
-          <span className="flex items-center gap-1.5 label">
-            <span className="inline-block h-1.5 w-1.5 bg-ok" />
-            {t('projects.done', { n: done })}
-          </span>
-        </div>
-      </div>
-    </button>
+    name
+      .trim()
+      .split(/\s+/)
+      .filter((w) => /^[\p{L}\p{N}]/u.test(w))
+      .slice(0, 2)
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase() || 'TF'
   )
 }
 
-// Workspace tile — like a project card but with a light-red border. Always
-// rendered before ungrouped projects (pinned to the top). Click opens it.
-function WorkspaceCard({ ws, count, onOpen, archived, onRestore, onDelete }) {
-  const { t } = useT()
+// Cover image or a red "blaze" fallback with the project initials.
+export function ProjectCover({ project, archived, className = 'aspect-[16/8]' }) {
   return (
-    <div className="group relative flex flex-col overflow-hidden border border-accent/40 bg-surface shadow-[0_0_50px_-28px_rgba(255,46,46,0.6)] transition-colors hover:border-accent/70">
-      {archived && (
-        <div className="absolute right-2 top-2 z-10 flex gap-1.5">
-          <button
-            onClick={onRestore}
-            className="border border-line bg-bg/80 px-2 py-1 label backdrop-blur transition-colors hover:text-ink"
-          >
-            {t('common.restore')}
-          </button>
-          <button
-            onClick={onDelete}
-            className="border border-line bg-bg/80 px-2 py-1 label backdrop-blur transition-colors hover:text-accent"
-          >
-            {t('common.delete')}
-          </button>
+    <div className={`relative w-full overflow-hidden bg-surface2 ${className} ${archived ? 'grayscale' : ''}`}>
+      {project.cover_url ? (
+        <img
+          src={project.cover_url}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+        />
+      ) : (
+        <div className="grain flex h-full w-full items-end bg-[linear-gradient(135deg,#1a0302_0%,#5a0703_45%,#c3150c_100%)] p-4">
+          <span className="display text-[64px] text-white/90">{initials(project.name)}</span>
         </div>
       )}
-      <button onClick={onOpen} className="flex flex-1 flex-col text-left">
-        <div className="relative flex aspect-[16/9] w-full items-center justify-center overflow-hidden bg-accentSoft">
-          {/* stacked-cards motif */}
-          <div className="relative h-14 w-20">
-            <span className="absolute inset-0 translate-x-2 translate-y-2 border border-accent/30" />
-            <span className="absolute inset-0 translate-x-1 translate-y-1 border border-accent/50" />
-            <span className="absolute inset-0 border border-accent/80 bg-bg/40" />
+    </div>
+  )
+}
+
+function Stat({ n, label, tone }) {
+  const color = tone === 'accent' && n > 0 ? 'text-accent' : tone === 'ok' ? 'text-ok' : 'text-ink'
+  return (
+    <div className="min-w-0">
+      <div className={`num text-[22px] font-medium leading-none ${n === 0 ? 'text-faint' : color}`}>{n}</div>
+      <div className="mt-1.5 truncate text-[12px] font-medium uppercase tracking-[0.06em] text-muted">{label}</div>
+    </div>
+  )
+}
+
+export const ProjectCard = memo(function ProjectCard({ project, stats, chat, index, tour, onOpen }) {
+  const { t } = useT()
+  const s = stats || { open: 0, done: 0, overdue: 0, unread: 0 }
+  return (
+    <button
+      onClick={() => onOpen(project.id)}
+      onMouseEnter={() => prefetch(loadProjectDetail)}
+      onFocus={() => prefetch(loadProjectDetail)}
+      onTouchStart={() => prefetch(loadProjectDetail)}
+      data-tour={tour ? 'project-card' : undefined}
+      className="card-in press group relative flex flex-col border border-line bg-surface text-left transition-colors hover:border-line2 hover:bg-surface2"
+      style={{ '--i': index }}
+    >
+      <ProjectCover project={project} />
+      <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+        {s.unread > 0 && (
+          <span className="flex h-7 items-center gap-1.5 bg-accent px-2 text-[12px] font-semibold uppercase tracking-[0.06em] text-white">
+            <Icon name="bell" size={14} /> {t('panel.newCount', { n: s.unread })}
+          </span>
+        )}
+        {chat > 0 && (
+          <span className="flex h-7 items-center gap-1.5 bg-ink px-2 text-[12px] font-semibold text-bg">
+            <Icon name="chat" size={14} /> {chat > 99 ? '99+' : chat}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="line-clamp-2 font-display text-[22px] font-extrabold uppercase leading-[1.05] tracking-tight text-ink">
+          {project.name}
+        </h3>
+        {project.description && <p className="mt-2 line-clamp-2 text-[14px] text-muted">{project.description}</p>}
+        <div className="min-h-4 flex-1" />
+        <div className="grid grid-cols-3 gap-3 border-t border-line pt-4">
+          <Stat n={s.open} label={t('panel.statOpen')} />
+          <Stat n={s.overdue} label={t('panel.statOverdue')} tone="accent" />
+          <Stat n={s.done} label={t('panel.statDone')} tone="ok" />
+        </div>
+      </div>
+      <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center bg-bg/80 text-ink opacity-0 transition-opacity group-hover:opacity-100">
+        <Icon name="arrowRight" size={16} />
+      </span>
+    </button>
+  )
+})
+
+// Workspace tile — pinned before ungrouped projects. Red-tinted.
+const WorkspaceCard = memo(function WorkspaceCard({ ws, count, index, archived, onOpen, onRestore, onDelete }) {
+  const { t } = useT()
+  return (
+    <div
+      className="card-in group relative flex flex-col border border-accent/45 bg-surface transition-colors hover:border-accent"
+      style={{ '--i': index }}
+    >
+      <button onClick={() => onOpen(ws.id)} className="press flex flex-1 flex-col text-left">
+        <div className="grain relative flex aspect-[16/8] w-full items-center justify-center overflow-hidden bg-[radial-gradient(120%_90%_at_50%_120%,rgba(242,35,27,0.45),rgba(6,6,6,0.2)_60%)]">
+          <div className="relative h-16 w-24">
+            <span className="absolute inset-0 translate-x-3 translate-y-3 border border-accent/30" />
+            <span className="absolute inset-0 translate-x-1.5 translate-y-1.5 border border-accent/55" />
+            <span className="absolute inset-0 border border-accent bg-bg/50" />
           </div>
-          <span className="absolute left-3 top-3 label text-accent">{t('workspaces.card')}</span>
+          <span className="tag absolute left-3 top-3 text-accent">{t('workspaces.card')}</span>
+          {!archived && (
+            <span className="absolute right-3 top-3 text-accent" title={t('panel.pinned')}>
+              <Icon name="pin" size={16} />
+            </span>
+          )}
         </div>
         <div className="flex flex-1 flex-col p-5">
-          <h3 className="text-[15px] font-medium text-ink">{ws.name}</h3>
-          <p className="mt-1.5 text-xs text-faint">{t('workspaces.private')}</p>
-          <div className="mt-4 flex items-center gap-4 border-t border-line pt-3">
-            <span className="flex items-center gap-1.5 label">
-              <span className="inline-block h-1.5 w-1.5 bg-accent" />
-              {t('workspaces.count', { n: count })}
-            </span>
+          <h3 className="line-clamp-2 font-display text-[22px] font-extrabold uppercase leading-[1.05] tracking-tight text-ink">
+            {ws.name}
+          </h3>
+          <p className="mt-2 flex items-center gap-2 text-[14px] text-muted">
+            <Icon name="lock" size={14} /> {t('workspaces.private')}
+          </p>
+          <div className="mt-4 border-t border-line pt-4">
+            <Stat n={count} label={t('panel.projectsInside')} />
           </div>
         </div>
+      </button>
+      {archived && <ArchiveActions onRestore={() => onRestore(ws)} onDelete={() => onDelete(ws)} />}
+    </div>
+  )
+})
+
+function ArchiveActions({ onRestore, onDelete }) {
+  const { t } = useT()
+  return (
+    <div className="grid grid-cols-2 border-t border-line">
+      <button onClick={onRestore} className="press flex h-11 items-center justify-center gap-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink hover:bg-surface2">
+        <Icon name="restore" size={16} /> {t('common.restore')}
+      </button>
+      <button onClick={onDelete} className="press flex h-11 items-center justify-center gap-2 border-l border-line text-[13px] font-semibold uppercase tracking-[0.06em] text-accent hover:bg-accent hover:text-white">
+        <Icon name="trash" size={16} /> {t('common.delete')}
       </button>
     </div>
   )
 }
 
-// Archived project tile with restore / delete (staff) or plain open.
-function ArchiveProjectCard({ project, isStaff, onOpen, onRestore, onDelete }) {
-  const { t } = useT()
+const ArchiveProjectCard = memo(function ArchiveProjectCard({ project, index, isStaff, onOpen, onRestore, onDelete }) {
   return (
-    <div className="group relative flex flex-col overflow-hidden border border-line bg-surface opacity-90 transition-colors hover:border-line2">
-      {isStaff && (
-        <div className="absolute right-2 top-2 z-10 flex gap-1.5">
-          <button
-            onClick={onRestore}
-            className="border border-line bg-bg/80 px-2 py-1 label backdrop-blur transition-colors hover:text-ink"
-          >
-            {t('common.restore')}
-          </button>
-          <button
-            onClick={onDelete}
-            className="border border-line bg-bg/80 px-2 py-1 label backdrop-blur transition-colors hover:text-accent"
-          >
-            {t('common.delete')}
-          </button>
-        </div>
-      )}
-      <button onClick={onOpen} className="flex flex-1 flex-col text-left">
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-surface2 grayscale">
-          {project.cover_url ? (
-            <img src={project.cover_url} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="dotgrid h-full w-full" />
-          )}
-        </div>
+    <div className="card-in group relative flex flex-col border border-line bg-surface transition-colors hover:border-line2" style={{ '--i': index }}>
+      <button onClick={() => onOpen(project.id)} className="press flex flex-1 flex-col text-left">
+        <ProjectCover project={project} archived />
         <div className="flex flex-1 flex-col p-5">
-          <h3 className="text-[15px] font-medium text-ink">{project.name}</h3>
-          {project.description && <p className="mt-1.5 line-clamp-2 text-xs text-faint">{project.description}</p>}
+          <h3 className="line-clamp-2 font-display text-[22px] font-extrabold uppercase leading-[1.05] tracking-tight text-muted">
+            {project.name}
+          </h3>
+          {project.description && <p className="mt-2 line-clamp-2 text-[14px] text-faint">{project.description}</p>}
         </div>
       </button>
+      {isStaff && <ArchiveActions onRestore={() => onRestore(project)} onDelete={() => onDelete(project)} />}
+    </div>
+  )
+})
+
+export function GridSkeleton({ n = 6 }) {
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-5">
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i} className="border border-line bg-surface">
+          <Skeleton className="aspect-[16/8] w-full" />
+          <div className="space-y-3 p-5">
+            <Skeleton className="h-6 w-2/3" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function PageHeader({ tag, title, sub, children }) {
+  return (
+    <div className="page-in mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="min-w-0">
+        {tag && <span className="tag text-muted">{tag}</span>}
+        <h1 className="display mt-3 break-words text-[44px] text-ink sm:text-[64px] lg:text-[80px]">{title}</h1>
+        {sub && <p className="mt-3 max-w-xl text-[15px] text-muted">{sub}</p>}
+      </div>
+      {children && <div className="flex flex-wrap items-center gap-2">{children}</div>}
     </div>
   )
 }
@@ -144,190 +210,256 @@ export default function Projects() {
   const { isStaff } = useAuth()
   const { t } = useT()
   const navigate = useNavigate()
-  const [projects, setProjects] = useState([]) // all (active + archived)
-  const [workspaces, setWorkspaces] = useState([]) // all (active + archived), created_at asc
-  const [grouped, setGrouped] = useState(() => new Set()) // project ids inside any of my workspaces
-  const [wsCount, setWsCount] = useState({}) // workspace id -> active project count
-  const [counts, setCounts] = useState({})
-  const [loading, setLoading] = useState(true)
+  const toast = useToast()
+  const confirm = useConfirm()
+  const { counts: chatCounts } = useChatUnread()
+
+  const [data, setData] = useState(cache) // { projects, workspaces, links, stats }
+  const [error, setError] = useState(null)
   const [tab, setTab] = useState('active')
   const [showForm, setShowForm] = useState(false)
   const [showWsForm, setShowWsForm] = useState(false)
-  const [showCalendar, setShowCalendar] = useState(false)
+  const req = useRef(0)
 
   const load = useCallback(async () => {
-    setLoading(true)
-    const [{ data: projs }, { data: ws }, { data: links }, { data: tix }] = await Promise.all([
-      supabase
-        .from('projects')
-        .select('id, name, description, cover_url, created_at, archived')
-        .order('created_at', { ascending: false }),
+    const my = ++req.current
+    const [p, w, l, s] = await Promise.all([
+      supabase.from('projects').select('id, name, description, cover_url, created_at, archived').order('created_at', { ascending: false }),
       supabase.from('workspaces').select('*').order('created_at', { ascending: true }),
       supabase.from('workspace_projects').select('workspace_id, project_id'),
-      supabase.from('tickets').select('project_id, status'),
+      supabase.rpc('project_stats'),
     ])
-
-    const list = projs ?? []
-    setProjects(list)
-    setWorkspaces(ws ?? [])
-
-    const activeIds = new Set(list.filter((p) => !p.archived).map((p) => p.id))
-    const g = new Set()
-    const wc = {}
-    for (const l of links ?? []) {
-      g.add(l.project_id)
-      if (activeIds.has(l.project_id)) wc[l.workspace_id] = (wc[l.workspace_id] || 0) + 1
+    if (my !== req.current) return
+    const err = p.error || w.error || l.error
+    if (err) {
+      setError(err)
+      return
     }
-    setGrouped(g)
-    setWsCount(wc)
-
-    const map = {}
-    for (const tk of tix ?? []) {
-      const c = (map[tk.project_id] ??= { open: 0, done: 0 })
-      if (tk.status === 'done' || tk.status === 'rejected') c.done++
-      else c.open++
-    }
-    setCounts(map)
-    setLoading(false)
+    const stats = {}
+    ;(s.data ?? []).forEach((r) => {
+      stats[r.project_id] = { open: Number(r.open), done: Number(r.done), total: Number(r.total), unread: Number(r.unread), overdue: Number(r.overdue) }
+    })
+    const next = { projects: p.data ?? [], workspaces: w.data ?? [], links: l.data ?? [], stats }
+    cache = next
+    setError(null)
+    setData(next)
   }, [])
+
+  // only the counters move on ticket activity → refetch the RPC alone, debounced
+  const refreshStats = useDebounced(async () => {
+    const my = req.current
+    const { data: rows, error: e } = await supabase.rpc('project_stats')
+    if (e || my !== req.current) return
+    const stats = {}
+    rows.forEach((r) => {
+      stats[r.project_id] = { open: Number(r.open), done: Number(r.done), total: Number(r.total), unread: Number(r.unread), overdue: Number(r.overdue) }
+    })
+    setData((d) => {
+      if (!d) return d
+      const next = { ...d, stats }
+      cache = next
+      return next
+    })
+  }, 300)
 
   useEffect(() => {
     load()
-  }, [load])
+    const ch = supabase
+      .channel(channelName('projects-grid'))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => refreshStats())
+      .subscribe()
+    return () => {
+      supabase.removeChannel(ch)
+    }
+  }, [load, refreshStats])
 
-  async function restoreProject(p) {
-    await supabase.from('projects').update({ archived: false }).eq('id', p.id)
-    load()
-  }
-  async function deleteProject(p) {
-    if (!confirm(t('projects.confirmDelete', { name: p.name }))) return
-    await supabase.from('projects').delete().eq('id', p.id)
-    load()
-  }
-  async function restoreWs(w) {
-    await supabase.from('workspaces').update({ archived: false }).eq('id', w.id)
-    load()
-  }
-  async function deleteWs(w) {
-    if (!confirm(t('workspaces.confirmDelete', { name: w.name }))) return
-    await supabase.from('workspaces').delete().eq('id', w.id)
-    load()
-  }
+  const view = useMemo(() => {
+    if (!data) return null
+    const { projects, workspaces, links } = data
+    const activeIds = new Set(projects.filter((p) => !p.archived).map((p) => p.id))
+    const grouped = new Set()
+    const wsCount = {}
+    for (const l of links) {
+      grouped.add(l.project_id)
+      if (activeIds.has(l.project_id)) wsCount[l.workspace_id] = (wsCount[l.workspace_id] || 0) + 1
+    }
+    const activeWs = workspaces.filter((w) => !w.archived)
+    const archivedWs = workspaces.filter((w) => w.archived)
+    const ungroupedActive = projects.filter((p) => !p.archived && !grouped.has(p.id))
+    const archivedProjects = projects.filter((p) => p.archived)
+    return { activeWs, archivedWs, ungroupedActive, archivedProjects, wsCount }
+  }, [data])
 
-  const activeWs = workspaces.filter((w) => !w.archived)
-  const archivedWs = workspaces.filter((w) => w.archived)
-  const ungroupedActive = projects.filter((p) => !p.archived && !grouped.has(p.id))
-  const archivedProjects = projects.filter((p) => p.archived)
+  const totals = useMemo(() => {
+    if (!data) return null
+    const act = new Set(data.projects.filter((p) => !p.archived).map((p) => p.id))
+    let open = 0, overdue = 0, unread = 0
+    for (const [pid, s] of Object.entries(data.stats)) {
+      if (!act.has(pid)) continue
+      open += s.open
+      overdue += s.overdue
+      unread += s.unread
+    }
+    return { open, overdue, unread }
+  }, [data])
 
-  const activeEmpty = activeWs.length === 0 && ungroupedActive.length === 0
-  const archiveEmpty = archivedWs.length === 0 && archivedProjects.length === 0
+  const openProject = useCallback((pid) => navigate(`/projects/${pid}`), [navigate])
+  const openWs = useCallback((wid) => navigate(`/workspaces/${wid}`), [navigate])
+
+  async function mutate(promise, okText) {
+    const { error: e } = await promise
+    if (e) toast.show(errText(t, e), { tone: 'error' })
+    else if (okText) toast.show(okText)
+    load()
+  }
+  const restoreProject = useCallback(
+    (p) => mutate(supabase.from('projects').update({ archived: false }).eq('id', p.id), t('panel.restored', { name: p.name })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  )
+  const deleteProject = useCallback(
+    async (p) => {
+      const ok = await confirm({ title: t('panel.deleteProjectTitle'), body: t('projects.confirmDelete', { name: p.name }), danger: true, confirmLabel: t('common.delete') })
+      if (ok) mutate(supabase.from('projects').delete().eq('id', p.id), t('panel.deleted', { name: p.name }))
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, confirm],
+  )
+  const restoreWs = useCallback(
+    (w) => mutate(supabase.from('workspaces').update({ archived: false }).eq('id', w.id), t('panel.restored', { name: w.name })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t],
+  )
+  const deleteWs = useCallback(
+    async (w) => {
+      const ok = await confirm({ title: t('workspaces.delete'), body: t('workspaces.confirmDelete', { name: w.name }), danger: true, confirmLabel: t('common.delete') })
+      if (ok) mutate(supabase.from('workspaces').delete().eq('id', w.id), t('panel.deleted', { name: w.name }))
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, confirm],
+  )
+
+  const tourSteps = useMemo(
+    () =>
+      isStaff
+        ? [
+            { title: t('tour.projAdmin0Title'), text: t('tour.projAdmin0Text') },
+            { target: '[data-tour="new-project"]', title: t('tour.projAdmin1Title'), text: t('tour.projAdmin1Text') },
+            { target: '[data-tour="users"]', title: t('tour.projAdmin2Title'), text: t('tour.projAdmin2Text') },
+          ]
+        : [
+            { title: t('tour.projClient0Title'), text: t('tour.projClient0Text') },
+            { target: '[data-tour="project-card"]', title: t('tour.projClient1Title'), text: t('tour.projClient1Text') },
+          ],
+    [isStaff, t],
+  )
+
+  const activeCount = view ? view.activeWs.length + view.ungroupedActive.length : 0
+  const archiveCount = view ? view.archivedWs.length + view.archivedProjects.length : 0
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-bg">
       <TopBar />
 
-      <main className="mx-auto max-w-[1320px] px-6 py-10">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <span className="label">{t('projects.catalog')} · MMXXVI</span>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">{t('projects.heading')}</h1>
-            <p className="mt-1.5 text-sm text-faint">{isStaff ? t('projects.subAdmin') : t('projects.subClient')}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button onClick={() => setShowCalendar(true)} className="btn-ghost flex items-center gap-2">
-              <IconCalendar size={15} />
-              {t('projects.calendar')}
+      <main className="mx-auto max-w-[1440px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+        <PageHeader tag={t('projects.catalog')} title={t('projects.heading')} sub={isStaff ? t('projects.subAdmin') : t('projects.subClient')}>
+          <button onClick={() => setShowWsForm(true)} className="btn-ghost">
+            <Icon name="layers" size={17} /> {t('panel.newWorkspace')}
+          </button>
+          {isStaff && (
+            <button onClick={() => setShowForm(true)} data-tour="new-project" className="btn-accent">
+              <Icon name="plus" size={17} /> {t('panel.newProject')}
             </button>
-            <button onClick={() => setShowWsForm(true)} className="btn-ghost">
-              {t('projects.newWorkspace')}
-            </button>
-            {isStaff && (
-              <button onClick={() => setShowForm(true)} data-tour="new-project" className="btn-solid">
-                {t('projects.newProject')}
-              </button>
-            )}
+          )}
+        </PageHeader>
+
+        {/* totals strip */}
+        {totals && activeCount > 0 && (
+          <div className="mb-8 grid grid-cols-3 border border-line bg-surface sm:max-w-xl">
+            {[
+              { n: totals.open, l: t('panel.statOpen'), c: 'text-ink' },
+              { n: totals.overdue, l: t('panel.statOverdue'), c: totals.overdue ? 'text-accent' : 'text-faint' },
+              { n: totals.unread, l: t('panel.statUnread'), c: totals.unread ? 'text-accent' : 'text-faint' },
+            ].map((x, i) => (
+              <div key={i} className={`px-4 py-3 ${i ? 'border-l border-line' : ''}`}>
+                <div className={`num text-[26px] font-medium leading-none ${x.c}`}>{x.n}</div>
+                <div className="mt-1.5 text-[12px] font-medium uppercase tracking-[0.06em] text-muted">{x.l}</div>
+              </div>
+            ))}
           </div>
+        )}
+
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Segmented
+            value={tab}
+            onChange={setTab}
+            items={[
+              { key: 'active', label: t('projects.tabActive'), n: view ? activeCount : null },
+              { key: 'archive', label: t('projects.tabArchive'), icon: 'archive', n: view ? archiveCount : null },
+            ]}
+          />
         </div>
 
-        {/* tabs */}
-        <div className="mb-8 flex gap-2">
-          {['active', 'archive'].map((k) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`border px-3 py-1.5 text-xs transition-colors ${
-                tab === k ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
-              }`}
-            >
-              {k === 'active' ? t('projects.tabActive') : t('projects.tabArchive')}
-            </button>
-          ))}
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-24">
-            <Spinner className="h-6 w-6" />
-          </div>
+        {!data ? (
+          error ? (
+            <ErrorState message={errText(t, error, 'common.loadError')} onRetry={load} />
+          ) : (
+            <GridSkeleton />
+          )
         ) : tab === 'active' ? (
-          activeEmpty ? (
-            <EmptyState title={t('projects.emptyTitle')} hint={isStaff ? t('projects.emptyAdmin') : t('projects.emptyClient')}>
+          activeCount === 0 ? (
+            <EmptyState icon="folder" title={t('projects.emptyTitle')} hint={isStaff ? t('projects.emptyAdmin') : t('projects.emptyClient')}>
               {isStaff && (
-                <button onClick={() => setShowForm(true)} className="btn-ghost">
-                  {t('projects.newProject')}
+                <button onClick={() => setShowForm(true)} className="btn-accent">
+                  <Icon name="plus" size={17} /> {t('panel.newProject')}
                 </button>
               )}
             </EmptyState>
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {activeWs.map((w) => (
-                <WorkspaceCard key={w.id} ws={w} count={wsCount[w.id] || 0} onOpen={() => navigate(`/workspaces/${w.id}`)} />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-5">
+              {view.activeWs.map((w, i) => (
+                <WorkspaceCard key={w.id} ws={w} index={i} count={view.wsCount[w.id] || 0} onOpen={openWs} />
               ))}
-              {ungroupedActive.map((p, i) => (
+              {view.ungroupedActive.map((p, i) => (
                 <ProjectCard
                   key={p.id}
                   project={p}
-                  index={i}
-                  tour={i === 0 && activeWs.length === 0}
-                  counts={counts[p.id]}
-                  onOpen={() => navigate(`/projects/${p.id}`)}
+                  index={view.activeWs.length + i}
+                  tour={i === 0}
+                  stats={data.stats[p.id]}
+                  chat={chatCounts?.[p.id] || 0}
+                  onOpen={openProject}
                 />
               ))}
             </div>
           )
-        ) : archiveEmpty ? (
-          <EmptyState title={t('projects.emptyArchiveTitle')} hint={t('projects.emptyArchiveHint')} />
+        ) : archiveCount === 0 ? (
+          <EmptyState icon="archive" title={t('projects.emptyArchiveTitle')} hint={t('projects.emptyArchiveHint')} />
         ) : (
           <div className="space-y-10">
-            {archivedWs.length > 0 && (
+            {view.archivedWs.length > 0 && (
               <section>
-                <h2 className="label mb-3">{t('projects.archiveWorkspaces')}</h2>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {archivedWs.map((w) => (
-                    <WorkspaceCard
-                      key={w.id}
-                      ws={w}
-                      count={0}
-                      archived
-                      onOpen={() => navigate(`/workspaces/${w.id}`)}
-                      onRestore={() => restoreWs(w)}
-                      onDelete={() => deleteWs(w)}
-                    />
+                <h2 className="label mb-4">{t('projects.archiveWorkspaces')}</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-5">
+                  {view.archivedWs.map((w, i) => (
+                    <WorkspaceCard key={w.id} ws={w} index={i} count={0} archived onOpen={openWs} onRestore={restoreWs} onDelete={deleteWs} />
                   ))}
                 </div>
               </section>
             )}
-            {archivedProjects.length > 0 && (
+            {view.archivedProjects.length > 0 && (
               <section>
-                <h2 className="label mb-3">{t('projects.archiveProjects')}</h2>
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                  {archivedProjects.map((p) => (
+                <h2 className="label mb-4">{t('projects.archiveProjects')}</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-5">
+                  {view.archivedProjects.map((p, i) => (
                     <ArchiveProjectCard
                       key={p.id}
                       project={p}
+                      index={i}
                       isStaff={isStaff}
-                      onOpen={() => navigate(`/projects/${p.id}`)}
-                      onRestore={() => restoreProject(p)}
-                      onDelete={() => deleteProject(p)}
+                      onOpen={openProject}
+                      onRestore={restoreProject}
+                      onDelete={deleteProject}
                     />
                   ))}
                 </div>
@@ -337,47 +469,19 @@ export default function Projects() {
         )}
       </main>
 
-      <ProjectFormModal open={showForm} onClose={() => setShowForm(false)} onSaved={load} />
-      {showWsForm && <WorkspaceFormModal open={showWsForm} onClose={() => setShowWsForm(false)} onSaved={load} />}
-      {showCalendar && (
-        <CalendarModal onClose={() => setShowCalendar(false)} onOpenTicket={(_ticketId, projectId) => navigate(`/projects/${projectId}`)} />
-      )}
-
-      {!loading && (
-        <Tour
-          storageKey={isStaff ? 'projects-admin' : 'projects-client'}
-          steps={
-            isStaff
-              ? [
-                  {
-                    title: t('tour.projAdmin0Title'),
-                    text: t('tour.projAdmin0Text'),
-                  },
-                  {
-                    target: '[data-tour="new-project"]',
-                    title: t('tour.projAdmin1Title'),
-                    text: t('tour.projAdmin1Text'),
-                  },
-                  {
-                    target: '[data-tour="users"]',
-                    title: t('tour.projAdmin2Title'),
-                    text: t('tour.projAdmin2Text'),
-                  },
-                ]
-              : [
-                  {
-                    title: t('tour.projClient0Title'),
-                    text: t('tour.projClient0Text'),
-                  },
-                  ungroupedActive.length > 0 && {
-                    target: '[data-tour="project-card"]',
-                    title: t('tour.projClient1Title'),
-                    text: t('tour.projClient1Text'),
-                  },
-                ].filter(Boolean)
-          }
+      {showForm && (
+        <ProjectFormModal
+          open
+          onClose={() => setShowForm(false)}
+          onSaved={(row) => {
+            load()
+            if (row?.id) toast.show(t('panel.projectCreated', { name: row.name }), { actions: [{ label: t('common.open'), onClick: () => openProject(row.id) }] })
+          }}
         />
       )}
+      {showWsForm && <WorkspaceFormModal open onClose={() => setShowWsForm(false)} onSaved={load} />}
+
+      {data && <Tour storageKey={isStaff ? 'projects-admin' : 'projects-client'} steps={tourSteps} />}
     </div>
   )
 }

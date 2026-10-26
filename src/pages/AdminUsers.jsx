@@ -1,34 +1,52 @@
-import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { TopBar } from '../components/TopBar'
-import { Spinner, EmptyState, Avatar, Modal } from '../components/ui'
+import { Spinner, EmptyState, ErrorState, Avatar, Modal, Icon, Skeleton, FormError, useConfirm, useToast } from '../components/ui'
+import { PageHeader } from './Projects'
+import { errText } from '../lib/errors'
+
+// Edge Function errors carry the real reason in error.context (non-2xx body).
+async function fnError(err, data) {
+  if (data?.error) return data.error
+  try {
+    return (await err?.context?.json?.())?.error || err?.message
+  } catch {
+    return err?.message
+  }
+}
 
 export default function AdminUsers() {
-  const navigate = useNavigate()
   const { t } = useT()
+  const toast = useToast()
+  const confirm = useConfirm()
   const { user, isModerator } = useAuth()
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState(null)
   const [projects, setProjects] = useState([])
   const [membership, setMembership] = useState({})
-  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
+  const [busyId, setBusyId] = useState(null)
+  const req = useRef(0)
 
   const load = useCallback(async () => {
+    const my = ++req.current
     // RLS scopes results: a moderator sees everyone, an admin sees only their own clients.
-    const [{ data: profs }, { data: projs }, { data: mem }] = await Promise.all([
+    const [p, pr, m] = await Promise.all([
       supabase.from('profiles').select('id, full_name, email, role, created_at').order('created_at'),
-      supabase.from('projects').select('id, name').order('created_at'),
+      supabase.from('projects').select('id, name').eq('archived', false).order('created_at'),
       supabase.from('project_members').select('user_id, project_id'),
     ])
-    setUsers(profs ?? [])
-    setProjects(projs ?? [])
-    const m = {}
-    ;(mem ?? []).forEach((x) => (m[x.user_id] = (m[x.user_id] || 0) + 1))
-    setMembership(m)
-    setLoading(false)
+    if (my !== req.current) return
+    const err = p.error || pr.error || m.error
+    if (err) return setError(err)
+    setError(null)
+    setUsers(p.data ?? [])
+    setProjects(pr.data ?? [])
+    const mm = {}
+    ;(m.data ?? []).forEach((x) => (mm[x.user_id] = (mm[x.user_id] || 0) + 1))
+    setMembership(mm)
   }, [])
 
   useEffect(() => {
@@ -36,69 +54,73 @@ export default function AdminUsers() {
   }, [load])
 
   async function removeUser(u) {
-    if (!confirm(t('users.confirmDelete', { email: u.email }))) return
-    // Auto-cancel the user's Paddle subscription before deleting the account.
-    // Only a moderator can cancel someone else's; the function no-ops if none.
-    if (isModerator) {
-      try {
-        await supabase.functions.invoke('paddle-cancel', { body: { action: 'cancel_for_user', user_id: u.id } })
-      } catch {
-        /* best-effort — proceed with deletion regardless */
+    if (busyId) return
+    const ok = await confirm({ title: t('panel.deleteUser'), body: t('users.confirmDelete', { email: u.email }), danger: true, confirmLabel: t('common.delete') })
+    if (!ok) return
+    setBusyId(u.id)
+    try {
+      // Auto-cancel the user's Paddle subscription before deleting the account.
+      if (isModerator) {
+        try {
+          await supabase.functions.invoke('paddle-cancel', { body: { action: 'cancel_for_user', user_id: u.id } })
+        } catch {
+          /* best-effort — proceed with deletion regardless */
+        }
       }
+      const { data, error: err } = await supabase.functions.invoke('create-user', { body: { action: 'delete', user_id: u.id } })
+      if (err || data?.error) {
+        console.warn('[users] delete failed', await fnError(err, data))
+        toast.show(t('panel.errDeleteUser'), { tone: 'error' })
+      } else {
+        setUsers((xs) => xs.filter((x) => x.id !== u.id))
+        toast.show(t('panel.userDeleted', { email: u.email }))
+      }
+    } finally {
+      setBusyId(null)
     }
-    const { error } = await supabase.functions.invoke('create-user', {
-      body: { action: 'delete', user_id: u.id },
-    })
-    if (error) alert(t('users.errDelete') + error.message)
-    load()
   }
 
   // A row gets a remove button if the current staff member is allowed to delete it.
   const canRemove = (u) => u.id !== user?.id && (isModerator ? true : u.role === 'user')
 
-  const moderators = users.filter((u) => u.role === 'moderator')
-  const admins = users.filter((u) => u.role === 'admin')
-  const clients = users.filter((u) => u.role === 'user')
+  const list = users ?? []
+  const moderators = list.filter((u) => u.role === 'moderator')
+  const admins = list.filter((u) => u.role === 'admin')
+  const clients = list.filter((u) => u.role === 'user')
+  const group = (title, xs) => (
+    <UserGroup title={title} users={xs} membership={membership} canRemove={canRemove} onRemove={removeUser} busyId={busyId} />
+  )
 
   return (
-    <div className="min-h-screen">
-      <TopBar />
-      <main className="mx-auto max-w-[900px] px-4 py-6 sm:px-6 sm:py-8">
-        <button onClick={() => navigate('/projects')} className="label mb-5 hover:text-ink transition-colors">
-          {t('common.toProjects')}
-        </button>
-
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div>
-            <span className="label">{t('users.label')} · MMXXVI</span>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">{t('users.heading')}</h1>
-            <p className="mt-1 text-sm text-faint">{isModerator ? t('users.subModerator') : t('users.sub')}</p>
-          </div>
-          <button onClick={() => setShowCreate(true)} className="btn-solid">
-            {t('users.new')}
+    <div className="min-h-screen bg-bg">
+      <TopBar crumbs={[{ label: t('topbar.users') }]} />
+      <main className="mx-auto max-w-[1000px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12">
+        <PageHeader tag={t('users.label')} title={t('users.heading')} sub={isModerator ? t('users.subModerator') : t('users.sub')}>
+          <button onClick={() => setShowCreate(true)} className="btn-accent">
+            <Icon name="userPlus" size={17} /> {t('panel.newUser')}
           </button>
-        </div>
+        </PageHeader>
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Spinner className="h-6 w-6" />
+        {error && !users ? (
+          <ErrorState message={errText(t, error, 'common.loadError')} onRetry={load} />
+        ) : !users ? (
+          <div className="space-y-2">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
           </div>
         ) : (
-          <div className="space-y-8">
-            {isModerator && (
-              <UserGroup title={t('users.moderators')} users={moderators} membership={membership} canRemove={canRemove} onRemove={removeUser} />
-            )}
-            {isModerator && (
-              <UserGroup title={t('users.admins')} users={admins} membership={membership} canRemove={canRemove} onRemove={removeUser} />
-            )}
+          <div className="space-y-10">
+            {isModerator && group(t('users.moderators'), moderators)}
+            {isModerator && group(t('users.admins'), admins)}
             {clients.length === 0 ? (
-              <EmptyState title={t('users.emptyTitle')} hint={t('users.emptyHint')}>
-                <button onClick={() => setShowCreate(true)} className="btn-ghost">
-                  {t('users.emptyBtn')}
+              <EmptyState icon="users" title={t('users.emptyTitle')} hint={t('users.emptyHint')}>
+                <button onClick={() => setShowCreate(true)} className="btn-accent">
+                  <Icon name="userPlus" size={16} /> {t('panel.newUser')}
                 </button>
               </EmptyState>
             ) : (
-              <UserGroup title={t('users.clients')} users={clients} membership={membership} canRemove={canRemove} onRemove={removeUser} />
+              group(t('users.clients'), clients)
             )}
           </div>
         )}
@@ -106,11 +128,14 @@ export default function AdminUsers() {
 
       {showCreate && (
         <CreateUserModal
-          open={showCreate}
+          open
           projects={projects}
           canPickRole={isModerator}
           onClose={() => setShowCreate(false)}
-          onCreated={load}
+          onCreated={(email) => {
+            toast.show(t('panel.userCreated', { email }))
+            load()
+          }}
         />
       )}
     </div>
@@ -119,31 +144,41 @@ export default function AdminUsers() {
 
 function RoleBadge({ role }) {
   const { t } = useT()
-  const color = role === 'moderator' ? 'text-legend' : role === 'admin' ? 'text-accent' : 'text-faint'
-  return <span className={`label-sm ${color}`}>{t('enum.role.' + role)}</span>
+  const color = role === 'moderator' ? 'text-legend border-legend/40' : role === 'admin' ? 'text-accent border-accent/40' : 'text-muted border-line'
+  return <span className={`shrink-0 border px-2 py-0.5 text-[12px] font-semibold uppercase tracking-[0.06em] ${color}`}>{t('enum.role.' + role)}</span>
 }
 
-function UserGroup({ title, users, membership, canRemove, onRemove }) {
+function UserGroup({ title, users, membership, canRemove, onRemove, busyId }) {
   const { t } = useT()
   if (!users.length) return null
   return (
     <section>
-      <h2 className="label mb-3">{title}</h2>
-      <ul className="divide-y divide-line border border-line">
-        {users.map((u) => (
-          <li key={u.id} className="flex items-center gap-3 px-4 py-3">
-            <Avatar name={u.full_name} email={u.email} />
+      <h2 className="label mb-3 flex items-center gap-2">
+        {title} <span className="num text-faint">{users.length}</span>
+      </h2>
+      <ul className="divide-y divide-line border border-line bg-surface">
+        {users.map((u, i) => (
+          <li key={u.id} className="card-in flex items-center gap-3 px-4 py-3.5" style={{ '--i': i }}>
+            <Avatar name={u.full_name} email={u.email} size={38} />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm text-ink">{u.full_name || u.email}</div>
-              {u.full_name && <div className="truncate text-xs text-faint">{u.email}</div>}
+              <div className="truncate text-[15px] font-medium text-ink">{u.full_name || u.email}</div>
+              {u.full_name && <div className="truncate text-[13px] text-muted">{u.email}</div>}
             </div>
             {u.role === 'user' && (
-              <span className="label-sm hidden sm:inline">{t('users.projectsCount', { n: membership[u.id] || 0 })}</span>
+              <span className="hidden shrink-0 items-center gap-1.5 text-[13px] text-muted sm:flex">
+                <Icon name="folder" size={14} /> {t('users.projectsCount', { n: membership[u.id] || 0 })}
+              </span>
             )}
             <RoleBadge role={u.role} />
             {canRemove?.(u) && onRemove && (
-              <button onClick={() => onRemove(u)} className="label-sm text-faint hover:text-accent">
-                {t('users.remove')}
+              <button
+                onClick={() => onRemove(u)}
+                disabled={!!busyId}
+                className="icon-btn-sm shrink-0 hover:!text-accent"
+                title={t('users.remove')}
+                aria-label={t('users.remove')}
+              >
+                {busyId === u.id ? <Spinner size={13} /> : <Icon name="trash" size={16} />}
               </button>
             )}
           </li>
@@ -184,10 +219,11 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
 
   async function submit(e) {
     e.preventDefault()
+    if (busy) return
     setError('')
     setBusy(true)
     try {
-      const { error: err } = await supabase.functions.invoke('create-user', {
+      const { data, error: err } = await supabase.functions.invoke('create-user', {
         body: {
           action: 'create',
           email: email.trim(),
@@ -197,11 +233,16 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
           project_ids: role === 'user' ? [...picked] : [],
         },
       })
-      if (err) throw new Error(err.message)
-      onCreated?.()
+      if (err || data?.error) {
+        const code = await fnError(err, data)
+        console.warn('[users] create failed', code)
+        throw new Error(String(code || ''))
+      }
+      onCreated?.(email.trim())
       onClose()
     } catch (err) {
-      setError(err.message || t('users.errCreate'))
+      const m = String(err.message || '').toLowerCase()
+      setError(m.includes('already') || m.includes('exists') ? t('register.errExists') : m.includes('password') ? t('register.errWeak') : t('panel.errCreateUser'))
     } finally {
       setBusy(false)
     }
@@ -212,16 +253,14 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
       <form onSubmit={submit}>
         {canPickRole && (
           <>
-            <label className="label mb-2 block">{t('users.role')}</label>
+            <div className="field-label mb-2">{t('users.role')}</div>
             <div className="mb-5 flex flex-wrap gap-2">
               {ROLE_OPTIONS.map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRole(r)}
-                  className={`border px-3 py-1.5 text-xs transition-colors ${
-                    role === r ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
-                  }`}
+                  className={`chip press ${role === r ? 'chip-on' : ''}`}
                 >
                   {t('enum.role.' + r)}
                 </button>
@@ -230,10 +269,10 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
           </>
         )}
 
-        <label className="label mb-2 block">{t('users.name')}</label>
+        <label className="field-label">{t('users.name')}</label>
         <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t('users.namePlaceholder')} className="field mb-5" />
 
-        <label className="label mb-2 block">{t('common.email')}</label>
+        <label className="field-label">{t('common.email')}</label>
         <input
           type="email"
           required
@@ -243,7 +282,7 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
           className="field mb-5"
         />
 
-        <label className="label mb-2 block">{t('users.password')}</label>
+        <label className="field-label">{t('users.password')}</label>
         <div className="mb-5 flex gap-2">
           <input
             required
@@ -252,24 +291,23 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
             placeholder={t('users.passwordPlaceholder')}
             className="field flex-1"
           />
-          <button type="button" onClick={genPassword} className="btn-ghost shrink-0">
-            {t('users.generate')}
+          <button type="button" onClick={genPassword} className="btn-ghost btn-sm shrink-0 self-end">
+            <Icon name="key" size={15} /> {t('users.generate')}
           </button>
         </div>
 
         {role === 'user' && projects.length > 0 && (
           <>
-            <label className="label mb-2 block">{t('users.access')}</label>
+            <div className="field-label mb-2">{t('users.access')}</div>
             <div className="mb-5 flex flex-wrap gap-2">
               {projects.map((p) => (
                 <button
                   key={p.id}
                   type="button"
                   onClick={() => toggleProject(p.id)}
-                  className={`border px-3 py-1.5 text-xs transition-colors ${
-                    picked.has(p.id) ? 'border-ink bg-ink text-bg' : 'border-line text-muted hover:border-line2'
-                  }`}
+                  className={`chip press ${picked.has(p.id) ? 'chip-on' : ''}`}
                 >
+                  {picked.has(p.id) && <Icon name="check" size={14} />}
                   {p.name}
                 </button>
               ))}
@@ -277,14 +315,15 @@ function CreateUserModal({ open, onClose, onCreated, projects, canPickRole }) {
           </>
         )}
 
-        {error && <div className="mb-5 border border-accent/40 bg-accentSoft px-3 py-2 text-xs text-accent">{error}</div>}
+        <FormError>{error}</FormError>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" onClick={onClose} className="btn-ghost">
             {t('common.cancel')}
           </button>
-          <button type="submit" disabled={busy || !email.trim() || !password} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('common.create')}
+          <button type="submit" disabled={busy || !email.trim() || !password} className="btn-accent">
+            {busy ? <Spinner className="border-white/40 border-t-white" /> : <Icon name="userPlus" size={16} />}
+            {t('common.create')}
           </button>
         </div>
       </form>

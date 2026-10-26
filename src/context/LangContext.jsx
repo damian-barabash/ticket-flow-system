@@ -54,7 +54,8 @@ export function LangProvider({ children }) {
       }
       // Persist to the backend profile when signed in (not localStorage-only).
       if (session?.user?.id) {
-        await supabase.from('profiles').update({ language: l }).eq('id', session.user.id)
+        const { error } = await supabase.from('profiles').update({ language: l }).eq('id', session.user.id)
+        if (error) console.warn('[lang] could not persist language', error)
       }
     },
     [session?.user?.id],
@@ -72,6 +73,12 @@ export function useT() {
   const ctx = useContext(LangContext)
   if (!ctx) throw new Error('useT must be used within LangProvider')
   return ctx
+}
+
+// Same as useT() but never throws (error boundaries render above/without the provider).
+export function useTOptional() {
+  const ctx = useContext(LangContext)
+  return ctx ?? { lang: DEFAULT_LANG, t: makeT(initialLang()), setLang: () => {}, languages: LANGUAGES }
 }
 
 export { DEFAULT_LANG }

@@ -3,7 +3,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { formatSize } from '../lib/format'
-import { Modal, Spinner } from './ui'
+import { FormError, Icon, Modal, Spinner } from './ui'
+import { errText } from '../lib/errors'
+import { uid } from '../lib/realtime'
 
 // strip the extension to use a file's name as a default title
 const baseName = (n) => n.replace(/\.[^.]+$/, '')
@@ -38,8 +40,8 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
 
   // upload one file to project-files/<projectId>/... and return its DB payload
   async function uploadFile(it) {
-    const ext = it.file.name.split('.').pop() || 'bin'
-    const path = `${projectId}/${crypto.randomUUID()}.${ext}`
+    const ext = it.file.name.includes('.') ? it.file.name.split('.').pop() : 'bin'
+    const path = `${projectId}/${uid()}.${ext}`
     const { error: upErr } = await supabase.storage
       .from('project-files')
       .upload(path, it.file, { contentType: it.file.type || 'application/octet-stream' })
@@ -62,30 +64,39 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
 
   async function onSubmit(e) {
     e.preventDefault()
-    if (!canSave) return
+    if (!canSave || busy) return
     setError('')
-    setBusy(true)
-    try {
-      const rows = []
-      for (const it of fileItems) rows.push(await uploadFile(it))
-      for (const l of validLinks) {
-        let url = l.url.trim()
-        if (!/^https?:\/\//i.test(url)) url = 'https://' + url
-        rows.push({
-          project_id: projectId,
-          kind: 'link',
-          title: l.title.trim() || url,
-          version: l.version.trim() || null,
-          url,
-          created_by: user.id,
-        })
+    // links: http(s) only
+    const links = []
+    for (const l of validLinks) {
+      let url = l.url.trim()
+      if (!/^[a-z][a-z0-9+.-]*:/i.test(url)) url = 'https://' + url
+      let ok = false
+      try {
+        const u = new URL(url)
+        ok = u.protocol === 'http:' || u.protocol === 'https:'
+      } catch {
+        ok = false
       }
-      const { error: insErr } = await supabase.from('project_releases').insert(rows)
+      if (!ok) return setError(t('panel.badLink'))
+      links.push({ project_id: projectId, kind: 'link', title: l.title.trim() || url, version: l.version.trim() || null, url, created_by: user.id })
+    }
+    setBusy(true)
+    const uploaded = []
+    try {
+      for (const it of fileItems) {
+        const row = await uploadFile(it)
+        uploaded.push(row.path)
+        links.push(row)
+      }
+      const { data, error: insErr } = await supabase.from('project_releases').insert(links).select()
       if (insErr) throw insErr
-      onSaved?.()
+      onSaved?.(data)
       onClose()
     } catch (err) {
-      setError(err.message || t('releaseForm.error'))
+      // nothing in the DB → remove the files we already pushed
+      if (uploaded.length) supabase.storage.from('project-files').remove(uploaded)
+      setError(errText(t, err, 'releaseForm.error'))
     } finally {
       setBusy(false)
     }
@@ -98,12 +109,8 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between">
             <span className="label">{t('releaseForm.files')}</span>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="label text-muted transition-colors hover:text-ink"
-            >
-              {t('releaseForm.pickFiles')}
+            <button type="button" onClick={() => fileRef.current?.click()} className="btn-quiet btn-sm">
+              <Icon name="plus" size={15} /> {t('panel.pickFiles')}
             </button>
             <input ref={fileRef} type="file" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
           </div>
@@ -111,8 +118,9 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="brackets flex w-full items-center justify-center border border-line bg-surface2 px-4 py-5 text-xs text-faint transition-colors hover:border-line2"
+              className="flex w-full items-center justify-center gap-2 border border-dashed border-line2 px-4 py-6 text-[14px] text-muted transition-colors hover:border-ink hover:text-ink"
             >
+              <Icon name="upload" size={18} />
               {t('releaseForm.filesDropzone')}
             </button>
           ) : (
@@ -120,16 +128,11 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
               {fileItems.map((it, i) => (
                 <div key={i} className="border border-line bg-surface2 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="truncate font-mono text-[11px] text-muted" title={it.file.name}>
+                    <span className="num truncate text-[13px] text-muted" title={it.file.name}>
                       {it.file.name} · {formatSize(it.file.size)}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => removeFile(i)}
-                      className="shrink-0 text-faint hover:text-accent"
-                      aria-label={t('releaseForm.removeFile')}
-                    >
-                      ✕
+                    <button type="button" onClick={() => removeFile(i)} className="icon-btn-sm hover:!text-accent" aria-label={t('releaseForm.removeFile')}>
+                      <Icon name="close" size={15} />
                     </button>
                   </div>
                   <div className="flex gap-2">
@@ -137,13 +140,13 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                       value={it.title}
                       onChange={(e) => setFileField(i, 'title', e.target.value)}
                       placeholder={t('common.titleField')}
-                      className="field flex-1 py-1.5 text-sm"
+                      className="field flex-1 py-2"
                     />
                     <input
                       value={it.version}
                       onChange={(e) => setFileField(i, 'version', e.target.value)}
                       placeholder={t('common.version')}
-                      className="field w-24 py-1.5 text-sm"
+                      className="field num w-24 py-2"
                     />
                   </div>
                 </div>
@@ -156,8 +159,8 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between">
             <span className="label">{t('releaseForm.links')}</span>
-            <button type="button" onClick={emptyLinkRow} className="label text-muted transition-colors hover:text-ink">
-              {t('releaseForm.addLink')}
+            <button type="button" onClick={emptyLinkRow} className="btn-quiet btn-sm">
+              <Icon name="plus" size={15} /> {t('panel.addLink')}
             </button>
           </div>
           {linkItems.length > 0 && (
@@ -169,15 +172,10 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                       value={l.url}
                       onChange={(e) => setLinkField(i, 'url', e.target.value)}
                       placeholder="https://…"
-                      className="field flex-1 py-1.5 text-sm"
+                      className="field flex-1 py-2"
                     />
-                    <button
-                      type="button"
-                      onClick={() => removeLink(i)}
-                      className="shrink-0 text-faint hover:text-accent"
-                      aria-label={t('releaseForm.removeLink')}
-                    >
-                      ✕
+                    <button type="button" onClick={() => removeLink(i)} className="icon-btn-sm hover:!text-accent" aria-label={t('releaseForm.removeLink')}>
+                      <Icon name="close" size={15} />
                     </button>
                   </div>
                   <div className="flex gap-2">
@@ -185,13 +183,13 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
                       value={l.title}
                       onChange={(e) => setLinkField(i, 'title', e.target.value)}
                       placeholder={t('common.titleField')}
-                      className="field flex-1 py-1.5 text-sm"
+                      className="field flex-1 py-2"
                     />
                     <input
                       value={l.version}
                       onChange={(e) => setLinkField(i, 'version', e.target.value)}
                       placeholder={t('common.version')}
-                      className="field w-24 py-1.5 text-sm"
+                      className="field num w-24 py-2"
                     />
                   </div>
                 </div>
@@ -200,16 +198,15 @@ export function ReleaseFormModal({ open, onClose, onSaved, projectId, initial = 
           )}
         </div>
 
-        {error && (
-          <div className="mb-5 border border-accent/40 bg-accentSoft px-3 py-2 text-xs text-accent">{error}</div>
-        )}
+        <FormError>{error}</FormError>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" onClick={onClose} className="btn-ghost">
             {t('common.cancel')}
           </button>
-          <button type="submit" disabled={busy || !canSave} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('common.add')}
+          <button type="submit" disabled={busy || !canSave} className="btn-accent">
+            {busy ? <Spinner className="border-white/40 border-t-white" /> : <Icon name="plus" size={16} />}
+            {t('common.add')}
           </button>
         </div>
       </form>

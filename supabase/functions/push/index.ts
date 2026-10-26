@@ -1,7 +1,12 @@
-// Push notifications (FCM HTTP v1). Called by the web panel and the mobile app
-// on project events. Recipients are resolved SERVER-SIDE (project owner + members,
-// minus the actor) — the client can't target arbitrary users.
+// Push notifications (FCM HTTP v1), v6 — 2026-10-26.
+// Called by the web panel and the apps on project events. The caller must be
+// able to see the ticket/project (checked with the caller's own JWT through RLS);
+// recipients are resolved SERVER-SIDE and filtered by notification_settings.
 // Dependency-free: service-account JWT (RS256) → OAuth token → FCM send.
+//
+// body: { event, ticket_id?, project_id?, comment_id?, message_id?, status?, assignee? }
+// events: ticket_created | status_changed | comment_added | task_assigned |
+//         assigned | chat_message
 const URL_ = Deno.env.get('SUPABASE_URL') ?? ''
 const SR = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 const ANON = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
@@ -10,7 +15,7 @@ const SA_RAW = Deno.env.get('FCM_SERVICE_ACCOUNT') ?? ''
 
 function cors(o: string | null) {
   return {
-    'Access-Control-Allow-Origin': o ?? '*',
+    'Access-Control-Allow-Origin': o && /^(https:\/\/(www\.)?ticketflow\.pl|https:\/\/tickets\.barabashflow\.pl|http:\/\/localhost(:\d+)?)$/.test(o) ? o : 'https://ticketflow.pl',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
@@ -23,7 +28,6 @@ function json(b: unknown, s: number, o: string | null) {
 // ---------- Google OAuth (service account → access token), cached in memory ----------
 let cachedToken = ''
 let cachedExp = 0
-
 function b64url(bytes: Uint8Array): string {
   let s = ''
   for (const b of bytes) s += String.fromCharCode(b)
@@ -40,6 +44,7 @@ async function accessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   if (cachedToken && cachedExp - 60 > now) return cachedToken
   const sa = JSON.parse(SA_RAW)
+  const te = new TextEncoder()
   const header = { alg: 'RS256', typ: 'JWT' }
   const claims = {
     iss: sa.client_email,
@@ -48,15 +53,8 @@ async function accessToken(): Promise<string> {
     exp: now + 3600,
     iat: now,
   }
-  const te = new TextEncoder()
   const unsigned = `${b64url(te.encode(JSON.stringify(header)))}.${b64url(te.encode(JSON.stringify(claims)))}`
-  const key = await crypto.subtle.importKey(
-    'pkcs8',
-    pemToPkcs8(sa.private_key),
-    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-    false,
-    ['sign'],
-  )
+  const key = await crypto.subtle.importKey('pkcs8', pemToPkcs8(sa.private_key), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign'])
   const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, te.encode(unsigned))
   const jwt = `${unsigned}.${b64url(new Uint8Array(sig))}`
   const res = await fetch(sa.token_uri, {
@@ -71,9 +69,15 @@ async function accessToken(): Promise<string> {
   return cachedToken
 }
 
-// ---------- data helpers (service role) ----------
+// ---------- data helpers ----------
 async function rest(path: string): Promise<any[]> {
   const r = await fetch(`${URL_}/rest/v1/${path}`, { headers: { apikey: SR, Authorization: `Bearer ${SR}` } })
+  if (!r.ok) return []
+  return (await r.json().catch(() => [])) as any[]
+}
+// Same query, but with the caller's JWT → RLS decides what they may see.
+async function restAs(auth: string, path: string): Promise<any[]> {
+  const r = await fetch(`${URL_}/rest/v1/${path}`, { headers: { apikey: ANON, Authorization: auth } })
   if (!r.ok) return []
   return (await r.json().catch(() => [])) as any[]
 }
@@ -91,60 +95,120 @@ async function dropToken(token: string) {
 }
 
 // ---------- copy ----------
-const STATUS_LABEL: Record<string, Record<string, string>> = {
-  done: { pl: 'Gotowe', ru: 'Выполнено', en: 'Done' },
-  in_progress: { pl: 'W trakcie', ru: 'В работе', en: 'In progress' },
+type Lang = 'pl' | 'ru' | 'en'
+const STATUS_LABEL: Record<string, Record<Lang, string>> = {
   new: { pl: 'Nowe', ru: 'Новый', en: 'New' },
-  rejected: { pl: 'Odrzucone', ru: 'Отклонён', en: 'Rejected' },
-  on_hold: { pl: 'Wstrzymane', ru: 'На паузе', en: 'On hold' },
+  in_progress: { pl: 'W trakcie', ru: 'В работе', en: 'In progress' },
   unclear: { pl: 'Niejasne', ru: 'Непонятно', en: 'Unclear' },
+  on_hold: { pl: 'Wstrzymane', ru: 'На паузе', en: 'On hold' },
   deferred: { pl: 'Odłożone', ru: 'Отложено', en: 'Deferred' },
+  done: { pl: 'Gotowe', ru: 'Выполнено', en: 'Done' },
+  rejected: { pl: 'Odrzucone', ru: 'Отклонён', en: 'Rejected' },
 }
-function copy(event: string, lang: string, t: any, extra: any): { title: string; body: string } {
-  const L = (m: Record<string, string>) => m[lang] ?? m.pl
-  const no = `#${String(t?.number ?? 0).padStart(3, '0')}`
-  const name = t?.title ?? ''
-  switch (event) {
+const PHOTO: Record<Lang, string> = { pl: 'Zdjęcie', ru: 'Фото', en: 'Photo' }
+const FILE: Record<Lang, string> = { pl: 'Plik', ru: 'Файл', en: 'File' }
+const CHAT: Record<Lang, string> = { pl: 'czat', ru: 'чат', en: 'chat' }
+const SOMEONE: Record<Lang, string> = { pl: 'Ktoś', ru: 'Кто-то', en: 'Someone' }
+
+function clip(s: string, n = 160) {
+  const t = (s ?? '').replace(/\s+/g, ' ').trim()
+  return t.length > n ? t.slice(0, n - 1) + '…' : t
+}
+function attachLabel(lang: Lang, atts: any[]): string {
+  if (!Array.isArray(atts) || atts.length === 0) return ''
+  const img = atts.every((a) => String(a?.content_type ?? '').startsWith('image/'))
+  const base = img ? PHOTO[lang] : FILE[lang]
+  return atts.length > 1 ? `${base} ×${atts.length}` : base
+}
+
+interface Ctx {
+  event: string
+  project: string
+  actor: string
+  ticket?: any
+  status?: string
+  comment?: any
+  message?: any
+}
+function copy(c: Ctx, lang: Lang): { title: string; body: string } {
+  const no = c.ticket ? `#${String(c.ticket.number ?? 0).padStart(3, '0')}` : ''
+  const tt = clip(c.ticket?.title ?? '', 90)
+  const actor = c.actor || SOMEONE[lang]
+  const L = (m: Record<Lang, string>) => m[lang] ?? m.pl
+  switch (c.event) {
     case 'ticket_created':
-      return { title: L({ pl: 'Nowe zgłoszenie', ru: 'Новый тикет', en: 'New ticket' }), body: `${no} ${name}` }
+      return {
+        title: `${c.project} · ${no}`,
+        body: L({ pl: `Nowe zgłoszenie od ${actor}: ${tt}`, ru: `Новый тикет от ${actor}: ${tt}`, en: `New ticket from ${actor}: ${tt}` }),
+      }
     case 'task_assigned':
-      return { title: L({ pl: 'Zadanie dla Ciebie', ru: 'Задание для тебя', en: 'Task for you' }), body: `${no} ${name}` }
-    case 'comment_added':
-      return { title: L({ pl: 'Nowy komentarz', ru: 'Новый комментарий', en: 'New comment' }), body: `${no} ${name}` }
+      return {
+        title: `${c.project} · ${no}`,
+        body: L({ pl: `Zadanie dla Ciebie od ${actor}: ${tt}`, ru: `Задание для тебя от ${actor}: ${tt}`, en: `Task for you from ${actor}: ${tt}` }),
+      }
+    case 'assigned':
+      return {
+        title: `${c.project} · ${no}`,
+        body: L({ pl: `${actor} przypisuje Ci: ${tt}`, ru: `${actor} назначает на тебя: ${tt}`, en: `${actor} assigned you: ${tt}` }),
+      }
     case 'status_changed': {
-      const s = extra?.status ?? ''
-      const sl = STATUS_LABEL[s] ? L(STATUS_LABEL[s]) : s
-      return { title: L({ pl: 'Zmiana statusu', ru: 'Статус изменён', en: 'Status changed' }), body: `${no} ${name} → ${sl}` }
+      const sl = STATUS_LABEL[c.status ?? ''] ? L(STATUS_LABEL[c.status!]) : c.status ?? ''
+      return { title: `${c.project} · ${no}`, body: `${tt} → ${sl} · ${actor}` }
+    }
+    case 'comment_added': {
+      const text = clip(c.comment?.body ?? '') || attachLabel(lang, c.comment?.atts ?? []) || '…'
+      return { title: `${c.project} · ${no} ${tt}`.trim(), body: `${actor}: ${text}` }
+    }
+    case 'chat_message': {
+      const text = clip(c.message?.body ?? '') || attachLabel(lang, c.message?.attachments ?? []) || '…'
+      return { title: `${c.project} · ${CHAT[lang]}`, body: `${actor}: ${text}` }
     }
     default:
-      return { title: 'Ticket Flow', body: `${no} ${name}`.trim() }
+      return { title: c.project || 'Ticket Flow', body: `${no} ${tt}`.trim() }
   }
 }
 
+// notification_settings column per event
+const PREF: Record<string, string> = {
+  ticket_created: 'tickets',
+  task_assigned: 'assigned',
+  assigned: 'assigned',
+  status_changed: 'status',
+  comment_added: 'comments',
+  chat_message: 'chat',
+}
+
 // ---------- FCM ----------
-async function send(token: string, title: string, body: string, data: Record<string, string>): Promise<void> {
+interface Tok { user_id: string; token: string; platform: string; app_version: string | null }
+async function send(t: Tok, title: string, body: string, data: Record<string, string>, group: string) {
   const at = await accessToken()
+  // Apps ≥1.1 create their own channels; older builds only have FCM's default one,
+  // and naming a channel the app never created silently drops the notification.
+  const modern = !!t.app_version
+  const channel = data.type === 'chat_message' ? 'tf_chat' : 'tf_activity'
+  const android: any = { priority: 'HIGH', notification: { sound: 'default', tag: group } }
+  if (modern) android.notification.channel_id = channel
+  const aps: any = { sound: 'default', 'thread-id': group }
+  if (!modern) aps.badge = 1
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_PROJECT}/messages:send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${at}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       message: {
-        token,
+        token: t.token,
         notification: { title, body },
         data,
-        // No channel_id — FCM falls back to its default channel, which always
-        // exists. Naming a channel that the app never created silently drops the
-        // notification on Android 8+.
-        android: { priority: 'HIGH', notification: { sound: 'default' } },
-        apns: { payload: { aps: { sound: 'default', badge: 1 } } },
+        android,
+        apns: { headers: { 'apns-priority': '10' }, payload: { aps } },
       },
     }),
   })
   if (!res.ok) {
     const txt = await res.text().catch(() => '')
-    // Stale device token → clean it up so we stop trying.
-    if (/UNREGISTERED|NOT_FOUND|INVALID_ARGUMENT/.test(txt)) await dropToken(token)
+    if (/UNREGISTERED|registration token is not a valid|Requested entity was not found/i.test(txt)) await dropToken(t.token)
+    return false
   }
+  return true
 }
 
 Deno.serve(async (req) => {
@@ -152,7 +216,8 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors(origin) })
   if (req.method !== 'POST') return json({ error: 'method' }, 405, origin)
 
-  const actor = await callerId(req.headers.get('Authorization') ?? '')
+  const auth = req.headers.get('Authorization') ?? ''
+  const actor = await callerId(auth)
   if (!actor) return json({ error: 'Unauthorized' }, 401, origin)
 
   let body: any
@@ -163,43 +228,97 @@ Deno.serve(async (req) => {
   }
   const event = String(body.event ?? '')
   const ticketId = body.ticket_id ? String(body.ticket_id) : ''
-  if (!event || !ticketId) return json({ error: 'event and ticket_id required' }, 400, origin)
+  const messageId = body.message_id ? String(body.message_id) : ''
+  if (!event || (!ticketId && !messageId)) return json({ error: 'event and ticket_id|message_id required' }, 400, origin)
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if ((ticketId && !UUID.test(ticketId)) || (messageId && !UUID.test(messageId))) return json({ error: 'bad id' }, 400, origin)
+  if (body.comment_id && !UUID.test(String(body.comment_id))) return json({ error: 'bad id' }, 400, origin)
+  if (!PREF[event]) return json({ error: 'bad event' }, 400, origin)
+  // status label comes from the DB row, never from client text
+  if (body.status && !STATUS_LABEL[String(body.status)]) body.status = undefined
 
   try {
-    const tRows = await rest(`tickets?id=eq.${ticketId}&select=id,number,title,project_id,created_by,is_task`)
-    const ticket = tRows[0]
-    if (!ticket) return json({ error: 'ticket_not_found' }, 404, origin)
+    let ticket: any = null
+    let message: any = null
+    let projectId = ''
+    if (event === 'chat_message') {
+      // RLS check with the caller's JWT
+      const rows = await restAs(auth, `project_messages?id=eq.${messageId}&select=id,project_id,author_id,body,attachments`)
+      message = rows[0]
+      if (!message) return json({ error: 'not_found' }, 404, origin)
+      if (message.author_id !== actor) return json({ error: 'forbidden' }, 403, origin)
+      projectId = message.project_id
+    } else {
+      const rows = await restAs(auth, `tickets?id=eq.${ticketId}&select=id,number,title,project_id,created_by,assigned_to,is_task,status`)
+      ticket = rows[0]
+      if (!ticket) return json({ error: 'not_found' }, 404, origin)
+      projectId = ticket.project_id
+    }
 
-    // Recipients: project owner + members + ticket author, minus the actor.
-    const pRows = await rest(`projects?id=eq.${ticket.project_id}&select=created_by`)
-    const mRows = await rest(`project_members?project_id=eq.${ticket.project_id}&select=user_id`)
+    const [proj] = await rest(`projects?id=eq.${projectId}&select=name,created_by`)
+    const [actorProf] = await rest(`profiles?id=eq.${actor}&select=full_name,email`)
+    const actorName = clip(actorProf?.full_name || (actorProf?.email ?? '').split('@')[0] || '', 40)
+
+    // Recipients
     const ids = new Set<string>()
-    if (pRows[0]?.created_by) ids.add(pRows[0].created_by)
-    for (const m of mRows) if (m.user_id) ids.add(m.user_id)
-    if (ticket.created_by) ids.add(ticket.created_by)
+    if (event === 'assigned') {
+      if (ticket?.assigned_to) ids.add(ticket.assigned_to)
+    } else {
+      const members = await rest(`project_members?project_id=eq.${projectId}&select=user_id`)
+      if (proj?.created_by) ids.add(proj.created_by)
+      for (const m of members) if (m.user_id) ids.add(m.user_id)
+      if (ticket?.created_by) ids.add(ticket.created_by)
+      if (ticket?.assigned_to) ids.add(ticket.assigned_to)
+    }
     ids.delete(actor)
     if (ids.size === 0) return json({ ok: true, sent: 0 }, 200, origin)
 
-    const list = [...ids]
-    const inList = `(${list.join(',')})`
-    const profs = await rest(`profiles?id=in.${inList}&select=id,language`)
-    const langOf: Record<string, string> = {}
-    for (const p of profs) langOf[p.id] = p.language ?? 'pl'
-
-    const tokens = await rest(`push_tokens?user_id=in.${inList}&select=user_id,token`)
+    const inList = `(${[...ids].join(',')})`
+    const [profs, prefs, tokens] = await Promise.all([
+      rest(`profiles?id=in.${inList}&select=id,language`),
+      rest(`notification_settings?user_id=in.${inList}`),
+      rest(`push_tokens?user_id=in.${inList}&select=user_id,token,platform,app_version`),
+    ])
     if (tokens.length === 0) return json({ ok: true, sent: 0 }, 200, origin)
+    const langOf: Record<string, Lang> = {}
+    for (const p of profs) langOf[p.id] = (['pl', 'ru', 'en'].includes(p.language) ? p.language : 'pl') as Lang
+    const prefOf: Record<string, any> = {}
+    for (const p of prefs) prefOf[p.user_id] = p
 
-    const data = { ticket_id: ticket.id, project_id: ticket.project_id, event }
-    let sent = 0
-    for (const row of tokens) {
-      const lang = langOf[row.user_id] ?? 'pl'
-      // A ticket flagged as a task reads as "task for you" for the client side.
-      const ev = event === 'ticket_created' && ticket.is_task ? 'task_assigned' : event
-      const { title, body: text } = copy(ev, lang, ticket, body)
-      await send(row.token, title, text, data)
-      sent++
+    // Optional comment preview
+    let comment: any = null
+    if (event === 'comment_added' && body.comment_id) {
+      const [c] = await rest(`ticket_comments?id=eq.${body.comment_id}&ticket_id=eq.${ticketId}&select=body`)
+      const atts = await rest(`attachments?comment_id=eq.${body.comment_id}&select=content_type`)
+      comment = { body: c?.body ?? '', atts }
     }
-    return json({ ok: true, sent }, 200, origin)
+
+    const sends: Promise<boolean>[] = []
+    for (const t of tokens as Tok[]) {
+      // An is_task ticket reads as "task for you" for everyone but staff.
+      const ev = event === 'ticket_created' && ticket?.is_task ? 'task_assigned' : event
+      const pref = prefOf[t.user_id]
+      if (pref) {
+        const col = PREF[ev]
+        if (col && pref[col] === false) continue
+        if (Array.isArray(pref.muted_projects) && pref.muted_projects.includes(projectId)) continue
+      }
+      const lang = langOf[t.user_id] ?? 'pl'
+      const { title, body: text } = copy(
+        { event: ev, project: clip(proj?.name ?? 'Ticket Flow', 40), actor: actorName, ticket, status: body.status ?? ticket?.status, comment, message },
+        lang,
+      )
+      const data: Record<string, string> = {
+        type: ev,
+        project_id: projectId,
+        ticket_id: ticket?.id ?? '',
+        message_id: message?.id ?? '',
+      }
+      const group = ev === 'chat_message' ? `chat-${projectId}` : `ticket-${ticket?.id}`
+      sends.push(send(t, title, text, data, group))
+    }
+    const res = await Promise.all(sends)
+    return json({ ok: true, sent: res.filter(Boolean).length }, 200, origin)
   } catch (e) {
     return json({ error: String((e as any)?.message ?? e) }, 500, origin)
   }

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { useT } from '../context/LangContext'
 import { openCheckout, isPaddleConfigured, PRICE_LABELS } from '../lib/paddle'
 import { LogoMark } from '../components/Logo'
-import { Spinner } from '../components/ui'
+import { Icon, Spinner } from '../components/ui'
 
 // Landing pad for the desktop apps' "Subscribe" button.
 //
@@ -46,47 +46,52 @@ export default function Checkout() {
   }, [])
 
   return (
-    <div className="dotgrid flex min-h-screen items-center justify-center bg-bg p-6">
-      <div className="w-full max-w-[440px] border border-line bg-surface p-8 text-center">
-        <LogoMark size={44} />
+    <div className="grain flex min-h-screen items-center justify-center bg-[radial-gradient(120%_80%_at_50%_120%,rgba(242,35,27,0.35),#060606_60%)] p-5">
+      <div className="page-in w-full max-w-[460px] border border-line bg-surface p-7 text-center sm:p-9">
+        <div className="flex justify-center">
+          <LogoMark size={48} />
+        </div>
 
         {state === 'done' ? (
           <>
-            <h1 className="mt-5 text-xl font-semibold text-ok">{t('checkout.doneTitle')}</h1>
-            <p className="mx-auto mt-2 max-w-[360px] text-sm text-muted">{t('checkout.doneBody')}</p>
+            <div className="mt-6 flex justify-center text-ok">
+              <Icon name="checkCircle" size={36} />
+            </div>
+            <h1 className="display mt-4 text-[36px] text-ink">{t('checkout.doneTitle')}</h1>
+            <p className="mx-auto mt-3 max-w-[360px] text-[15px] text-muted">{t('checkout.doneBody')}</p>
           </>
         ) : state === 'error' ? (
           <>
-            <h1 className="mt-5 text-xl font-semibold text-ink">{t('checkout.errorTitle')}</h1>
-            <p className="mx-auto mt-2 max-w-[360px] text-sm text-muted">{t('checkout.errorBody')}</p>
+            <h1 className="display mt-6 text-[32px] text-ink">{t('checkout.errorTitle')}</h1>
+            <p className="mx-auto mt-3 max-w-[360px] text-[15px] text-muted">{t('checkout.errorBody')}</p>
             {isPaddleConfigured() && (
-              <button onClick={launch} className="btn-accent mt-6 w-full max-w-[280px]">
-                {t('checkout.retry')}
+              <button onClick={launch} className="btn-accent mt-6 w-full">
+                <Icon name="refresh" size={16} /> {t('checkout.retry')}
               </button>
             )}
           </>
         ) : (
           <>
-            <h1 className="mt-5 text-xl font-semibold text-ink">{t('checkout.title')}</h1>
-            <p className="mx-auto mt-2 max-w-[360px] text-sm text-muted">
+            <h1 className="display mt-6 text-[36px] text-ink">{t('checkout.title')}</h1>
+            <p className="mx-auto mt-3 max-w-[360px] text-[15px] text-muted">
               {t(plan === 'yearly' ? 'billing.payYearly' : 'billing.payMonthly', { price: PRICE_LABELS[plan] })}
             </p>
-            {email && <p className="mt-1 font-mono text-xs text-faint">{email}</p>}
-            <div className="mt-6 flex items-center justify-center gap-3 text-sm text-muted">
+            {email && <p className="num mt-1 text-[13px] text-faint">{email}</p>}
+            <div className="mt-6 flex items-center justify-center gap-3 text-[15px] text-muted">
               <Spinner />
               {t('checkout.opening')}
             </div>
             {state === 'open' && (
               // The overlay can be dismissed by accident — leave a way back in.
-              <button onClick={launch} className="label mt-6 text-faint hover:text-ink transition-colors">
-                {t('checkout.retry')}
+              <button onClick={launch} className="btn-ghost mt-6 w-full">
+                <Icon name="card" size={16} /> {t('checkout.retry')}
               </button>
             )}
           </>
         )}
 
-        <Link to="/projects" className="label mt-8 block text-faint hover:text-ink transition-colors">
-          {t('checkout.toPanel')}
+        <Link to="/projects" className="btn-link mt-8 text-[14px]">
+          {t('checkout.toPanel')} <Icon name="arrowRight" size={15} />
         </Link>
       </div>
     </div>

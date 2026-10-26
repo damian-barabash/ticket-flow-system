@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
 import { entitlement } from '../lib/billing'
-import { openCheckout, PRICE_LABEL } from '../lib/paddle'
+import { openCheckout, pollUntilActive, PRICE_LABELS } from '../lib/paddle'
 import { PlanButtons } from './PlanButtons'
 import { formatDay } from '../lib/format'
-import { Modal, Spinner } from './ui'
+import { FormError, Icon, Modal, Spinner, useConfirm } from './ui'
 
 // Admin subscription management: shows status, lets them subscribe or cancel.
 // Cancel goes through the paddle-cancel Edge Function (secret key stays server-side).
@@ -16,6 +16,15 @@ export function BillingModal({ open, onClose }) {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
+  const [activating, setActivating] = useState(false)
+  const confirmDlg = useConfirm()
+  const profRef = useRef(profile)
+  profRef.current = profile
+  const stopPoll = useRef(null)
+  useEffect(() => () => stopPoll.current?.(), [])
+  useEffect(() => {
+    if (activating && entitlement(profile).state === 'active') setActivating(false)
+  }, [activating, profile])
 
   const ent = entitlement(profile)
   const endDate = profile?.subscription_ends_at ? formatDay(profile.subscription_ends_at) : ''
@@ -23,12 +32,23 @@ export function BillingModal({ open, onClose }) {
 
   async function pay(plan) {
     setError('')
-    const r = await openCheckout({ email: profile?.email, profileId: profile?.id, plan })
-    if (!r.ok && r.reason === 'not_configured') setError(t('billing.notConfigured'))
+    const r = await openCheckout({
+      email: profile?.email,
+      profileId: profile?.id,
+      plan,
+      onEvent: (e) => {
+        if (e?.name !== 'checkout.completed') return
+        setActivating(true)
+        stopPoll.current?.()
+        stopPoll.current = pollUntilActive(reloadProfile, () => entitlement(profRef.current).state === 'active')
+      },
+    })
+    if (!r.ok) setError(r.reason === 'not_configured' ? t('billing.notConfigured') : t('checkout.errorBody'))
   }
 
   async function cancel() {
-    if (!confirm(t('billing.cancelConfirm'))) return
+    const ok = await confirmDlg({ title: t('billing.cancelBtn'), body: t('billing.cancelConfirm'), danger: true, confirmLabel: t('billing.cancelBtn') })
+    if (!ok) return
     setBusy(true)
     setError('')
     try {
@@ -54,32 +74,44 @@ export function BillingModal({ open, onClose }) {
       : ''
 
   return (
-    <Modal open={open} onClose={onClose} title={t('billing.modalTitle')}>
+    <Modal open={open} onClose={onClose} title={t('billing.modalTitle')} width="max-w-md">
       <div className="mb-6 border border-line bg-surface2 p-5">
         <div className="flex items-center gap-2">
-          <span className={`inline-block h-2 w-2 ${ent.state === 'active' ? 'bg-ok' : ent.state === 'trial' ? 'bg-accent' : 'bg-faint'}`} />
-          <span className={`text-sm font-medium ${statusColor}`}>{statusLabel}</span>
+          <span className={`inline-block h-2.5 w-2.5 ${ent.state === 'active' ? 'bg-ok' : ent.state === 'trial' ? 'bg-warn' : 'bg-accent'}`} />
+          <span className={`text-[16px] font-semibold ${statusColor}`}>{statusLabel}</span>
         </div>
-        {sub && <p className="mt-1.5 text-xs text-faint">{sub}</p>}
-        <p className="mt-3 font-mono text-[11px] uppercase tracking-label text-faint">{PRICE_LABEL}</p>
+        {sub && <p className="mt-1.5 text-[14px] text-muted">{sub}</p>}
+        <p className="num mt-3 text-[13px] text-faint">
+          {PRICE_LABELS.monthly} / {PRICE_LABELS.yearly}
+        </p>
       </div>
 
-      {msg && <div className="mb-5 border border-ok/40 bg-ok/10 px-3 py-2 text-xs text-ok">{msg}</div>}
-      {error && <div className="mb-5 border border-accent/40 bg-accentSoft px-3 py-2 text-xs text-accent">{error}</div>}
+      {activating && (
+        <div className="mb-5 flex items-center gap-3 border border-ok/40 bg-ok/10 px-3 py-2.5 text-[14px] text-ink">
+          <Spinner size={13} /> {t('panel.activatingHint')}
+        </div>
+      )}
+      {msg && (
+        <div className="mb-5 flex items-center gap-2 border border-ok/40 bg-ok/10 px-3 py-2.5 text-[14px] text-ink">
+          <Icon name="check" size={16} className="text-ok" /> {msg}
+        </div>
+      )}
+      <FormError>{error}</FormError>
 
-      {ent.state !== 'active' && !msg && (
+      {ent.state !== 'active' && !msg && !activating && (
         <div className="mb-6">
           <PlanButtons onPick={pay} busy={busy} />
         </div>
       )}
 
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button onClick={onClose} className="btn-ghost">
           {t('common.close')}
         </button>
         {canCancel && (
-          <button onClick={cancel} disabled={busy || !!msg} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : t('billing.cancelBtn')}
+          <button onClick={cancel} disabled={busy || !!msg} className="btn-danger">
+            {busy ? <Spinner /> : <Icon name="close" size={16} />}
+            {t('billing.cancelBtn')}
           </button>
         )}
       </div>

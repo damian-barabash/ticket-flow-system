@@ -13,3 +13,11 @@ export async function notify(event, ticketId, extra = {}) {
     /* best-effort; never block the UI */
   }
 }
+
+export async function notifyChat(messageId) {
+  try {
+    await supabase.functions.invoke('push', { body: { event: 'chat_message', message_id: messageId } })
+  } catch {
+    /* best-effort */
+  }
+}

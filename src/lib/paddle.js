@@ -50,31 +50,83 @@ export function checkoutUrl({ email, profileId, plan = 'monthly', base = 'https:
   return `${base}/#/checkout?${q.toString()}`
 }
 
+// Paddle v2 must be initialised ONCE per page. Its single eventCallback routes
+// to whichever checkout is currently open (module-level router).
+let setupDone = false
+let current = null // { onEvent, onClose }
+function ensureSetup(Paddle) {
+  if (setupDone) return
+  if (PADDLE_ENV === 'sandbox') Paddle.Environment.set('sandbox')
+  Paddle.Initialize
+    ? Paddle.Initialize({ token: PADDLE_CLIENT_TOKEN, eventCallback: route })
+    : Paddle.Setup({ token: PADDLE_CLIENT_TOKEN, eventCallback: route })
+  setupDone = true
+}
+function route(e) {
+  const h = current
+  if (!h) return
+  try {
+    h.onEvent?.(e)
+    if (e?.name === 'checkout.closed' || e?.name === 'checkout.completed') h.onClose?.(e)
+  } catch (err) {
+    console.warn('[paddle] handler failed', err)
+  }
+  if (e?.name === 'checkout.closed') current = null
+}
+
+function uiLocale() {
+  try {
+    const l = localStorage.getItem('tf_lang')
+    if (l === 'ru' || l === 'en' || l === 'pl') return l
+  } catch {
+    /* ignore */
+  }
+  return 'pl'
+}
+
 // Opens the Paddle checkout overlay. `plan` = 'monthly' | 'yearly'. customData
 // carries the profile id so the webhook can map the subscription back to the user.
-export async function openCheckout({ email, profileId, plan = 'monthly', onClose, onEvent } = {}) {
+export async function openCheckout({ email, profileId, plan = 'monthly', onClose, onEvent, locale } = {}) {
   if (!isPaddleConfigured()) {
     return { ok: false, reason: 'not_configured' }
   }
   try {
     const priceId = PADDLE_PRICES[plan] || PADDLE_PRICES.monthly
     const Paddle = await loadPaddle()
-    if (PADDLE_ENV === 'sandbox') Paddle.Environment.set('sandbox')
-    Paddle.Setup({
-      token: PADDLE_CLIENT_TOKEN,
-      eventCallback: (e) => {
-        onEvent?.(e)
-        if (e?.name === 'checkout.closed' || e?.name === 'checkout.completed') onClose?.(e)
-      },
-    })
+    ensureSetup(Paddle)
+    current = { onEvent, onClose }
     Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
       customer: email ? { email } : undefined,
       customData: profileId ? { profile_id: profileId } : undefined,
-      settings: { displayMode: 'overlay', theme: 'dark', locale: 'pl' },
+      settings: { displayMode: 'overlay', theme: 'dark', locale: locale || uiLocale() },
     })
     return { ok: true }
   } catch (e) {
-    return { ok: false, reason: e.message }
+    console.warn('[paddle] open failed', e)
+    return { ok: false, reason: 'failed' }
+  }
+}
+
+// After checkout.completed the webhook flips the profile a few seconds later.
+// Poll the profile until it is active (or give up after ~2 minutes).
+export function pollUntilActive(reload, isActive, { every = 2000, max = 60 } = {}) {
+  let n = 0
+  let stopped = false
+  const tick = async () => {
+    if (stopped) return
+    n++
+    try {
+      await reload()
+    } catch {
+      /* ignore */
+    }
+    if (stopped || isActive() || n >= max) return
+    timer = setTimeout(tick, every)
+  }
+  let timer = setTimeout(tick, every)
+  return () => {
+    stopped = true
+    clearTimeout(timer)
   }
 }

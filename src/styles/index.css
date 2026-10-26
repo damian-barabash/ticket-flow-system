@@ -2,63 +2,98 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   Ticket Flow design system v2 — "Momentum" (2026-10)
+   Black · signal red · white. Huge uppercase display type, hairlines,
+   underline inputs, rectangular buttons. RULE: all corners are 90°.
+   ═══════════════════════════════════════════════════════════════════ */
+
 @layer base {
-  /* editorial-dark palette (channel triplets for rgb(var() / alpha)) — the default
-     everywhere, so the panel is unchanged. */
   :root {
     color-scheme: dark;
-    --c-bg: 10 10 11;
-    --c-surface: 20 20 22;
-    --c-surface2: 27 27 30;
-    --c-line: 38 38 41;
-    --c-line2: 52 52 58;
-    --c-ink: 237 237 237;
-    --c-muted: 138 138 146;
-    --c-faint: 85 85 92;
-    --c-accent: 255 46 46;
-    --c-ok: 63 185 80;
-    --c-warn: 227 179 65;
-    --c-legend: 169 116 255;
+    --c-bg: 6 6 6;
+    --c-surface: 14 14 14;
+    --c-surface2: 22 22 22;
+    --c-line: 38 38 38;
+    --c-line2: 58 58 58;
+    --c-ink: 245 245 245;
+    --c-muted: 168 168 168;
+    --c-faint: 120 120 120;
+    --c-accent: 242 35 27;
+    --c-accent-deep: 150 8 4;
+    --c-ok: 70 200 100;
+    --c-warn: 240 190 70;
+    --c-legend: 176 132 255;
     --dot: rgba(255, 255, 255, 0.05);
-    --glass-bg: rgba(10, 10, 11, 0.55);
+    --glass-bg: rgba(6, 6, 6, 0.72);
+    --hdr: 64px;
   }
-  /* light theme — scoped to the landing only (.theme-light wrapper) */
+  /* light scope (landing toggle only) */
   .theme-light {
     color-scheme: light;
-    --c-bg: 250 250 248;
+    --c-bg: 246 245 242;
     --c-surface: 255 255 255;
-    --c-surface2: 242 242 238;
-    --c-line: 226 226 221;
-    --c-line2: 208 208 201;
-    --c-ink: 22 22 26;
-    --c-muted: 90 90 98;
-    --c-faint: 138 138 144;
-    --c-accent: 222 30 30;
-    --c-ok: 30 140 56;
-    --c-warn: 176 124 8;
-    --c-legend: 124 58 237;
+    --c-surface2: 236 235 231;
+    --c-line: 222 220 214;
+    --c-line2: 200 198 190;
+    --c-ink: 12 12 12;
+    --c-muted: 82 82 82;
+    --c-faint: 120 120 120;
+    --c-accent: 226 20 12;
+    --c-accent-deep: 150 8 4;
+    --c-ok: 22 128 50;
+    --c-warn: 160 110 0;
+    --c-legend: 110 50 220;
     --dot: rgba(0, 0, 0, 0.06);
-    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-bg: rgba(246, 245, 242, 0.8);
+  }
+  *,
+  *::before,
+  *::after {
+    border-radius: 0;
   }
   html,
   body,
   #root {
     height: 100%;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
   body {
     @apply bg-bg text-ink font-sans antialiased;
     margin: 0;
+    font-size: 15px;
+    line-height: 1.55;
+    font-feature-settings: 'cv11', 'ss01';
   }
-  /* display face for headings — distinctive, editorial-tech */
   h1,
   h2,
-  h3 {
+  h3,
+  h4 {
     @apply font-display;
+    letter-spacing: -0.02em;
   }
   ::selection {
-    background: rgba(255, 46, 46, 0.28);
+    background: rgb(var(--c-accent) / 0.35);
+    color: #fff;
   }
-  /* faint dot-grid backdrop (theme-aware) */
+  :focus-visible {
+    outline: 2px solid rgb(var(--c-accent));
+    outline-offset: 2px;
+  }
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+  }
+  /* thin dark scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--c-line2)) transparent;
+  }
   .dotgrid {
     background-image: radial-gradient(var(--dot) 1px, transparent 1px);
     background-size: 26px 26px;
@@ -67,19 +102,55 @@
 }
 
 @layer components {
-  /* mono uppercase micro-label */
+  /* ── type ─────────────────────────────────────────────── */
+  /* huge uppercase display (MEET EXPERTS…) */
+  .display {
+    @apply font-display font-extrabold uppercase;
+    line-height: 0.9;
+    letter-spacing: -0.035em;
+  }
+  /* small uppercase label — readable (12px, semibold, light tracking) */
   .label {
-    @apply font-mono uppercase tracking-label text-faint;
-    font-size: 10px;
+    @apply font-sans font-semibold uppercase text-muted;
+    font-size: 12px;
+    line-height: 16px;
+    letter-spacing: 0.08em;
   }
   .label-sm {
-    @apply font-mono uppercase tracking-label text-faint;
-    font-size: 9px;
+    @apply font-sans font-semibold uppercase text-faint;
+    font-size: 11px;
+    line-height: 14px;
+    letter-spacing: 0.08em;
+  }
+  /* [ OUR TEAM ] bracket tag */
+  .tag {
+    @apply font-display font-bold uppercase text-ink;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
+  .tag::before {
+    content: '[ ';
+  }
+  .tag::after {
+    content: ' ]';
+  }
+  .meta {
+    @apply text-[13px] leading-5 text-muted;
+  }
+  .num {
+    @apply font-mono tabular-nums;
   }
   .hairline {
     @apply border border-line;
   }
-  /* corner-bracket frame */
+  .card {
+    @apply border border-line bg-surface;
+  }
+  .card-hover {
+    @apply transition-colors hover:border-line2 hover:bg-surface2;
+  }
+
+  /* corner-bracket frame (kept for empty states) */
   .brackets::before,
   .brackets::after {
     content: '';
@@ -101,30 +172,115 @@
     border-bottom: 1px solid;
     border-right: 1px solid;
   }
-  /* minimalist underline input */
+
+  /* ── form ─────────────────────────────────────────────── */
+  .field-label {
+    @apply block text-[13px] font-medium text-muted;
+  }
+  /* underline input (Your name ________) */
   .field {
-    @apply w-full bg-transparent border-0 border-b border-line py-2.5 text-ink
+    @apply w-full bg-transparent border-0 border-b border-line2 py-2.5 text-[15px] text-ink
       placeholder:text-faint focus:outline-none focus:border-ink transition-colors;
   }
+  .field:focus-visible {
+    outline: none;
+  }
+  textarea.field {
+    @apply resize-y;
+  }
+  /* boxed input for dense panels */
+  .input-box {
+    @apply w-full border border-line bg-bg px-3 py-2.5 text-[15px] text-ink placeholder:text-faint
+      focus:border-ink focus:outline-none transition-colors;
+  }
+  .input-box:focus-visible {
+    outline: none;
+  }
+
+  /* ── buttons (rectangular) ────────────────────────────── */
+  .btn {
+    @apply inline-flex select-none items-center justify-center gap-2 whitespace-nowrap font-sans font-semibold
+      uppercase transition-all disabled:cursor-not-allowed disabled:opacity-40;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    min-height: 44px;
+    padding: 0 22px;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .btn-sm {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 12px;
+  }
+  .btn-accent {
+    @apply btn bg-accent text-white hover:bg-[#ff3a2f] active:bg-accentDeep;
+  }
   .btn-solid {
-    @apply inline-flex items-center justify-center gap-2 bg-ink text-bg font-mono uppercase
-      tracking-label text-[11px] px-6 py-3 hover:bg-white transition-colors disabled:opacity-40
-      disabled:cursor-not-allowed;
+    @apply btn bg-ink text-bg hover:bg-white;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 border border-line text-ink font-mono
-      uppercase tracking-label text-[11px] px-5 py-2.5 hover:border-line2 hover:bg-surface2
-      transition-colors disabled:opacity-40;
+    @apply btn border border-line2 text-ink hover:border-ink hover:bg-surface2;
   }
-  /* accent (red) solid CTA — landing / registration */
-  .btn-accent {
-    @apply inline-flex items-center justify-center gap-2 bg-accent text-white font-mono uppercase
-      tracking-label text-[11px] px-6 py-3 transition-all hover:brightness-110
-      hover:shadow-[0_0_30px_-6px_rgba(255,46,46,0.6)] disabled:opacity-40 disabled:cursor-not-allowed;
+  .btn-quiet {
+    @apply btn text-muted hover:text-ink hover:bg-surface2;
+    padding: 0 12px;
+  }
+  .btn-danger {
+    @apply btn border border-accent/50 text-accent hover:bg-accent hover:text-white;
+  }
+  /* red underlined text link (Let's talk strategy) */
+  .btn-link {
+    @apply inline-flex items-center gap-1.5 font-semibold text-accent underline decoration-2 underline-offset-4
+      hover:text-[#ff4a40] transition-colors;
+  }
+  /* square icon button */
+  .icon-btn {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center border border-line text-muted
+      transition-colors hover:border-ink hover:text-ink disabled:opacity-40;
+  }
+  .icon-btn-sm {
+    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center text-muted transition-colors hover:bg-surface2 hover:text-ink;
+  }
+
+  /* chip / segmented filter (square) */
+  .chip {
+    @apply inline-flex items-center gap-2 border border-line px-3 text-[13px] font-medium text-muted transition-colors
+      hover:border-line2 hover:text-ink;
+    min-height: 34px;
+  }
+  .chip-on {
+    @apply border-ink bg-ink text-bg hover:text-bg;
+  }
+  .chip-accent {
+    @apply border-accent bg-accent text-white hover:text-white;
   }
 }
 
-/* scroll-reveal: hidden until .is-in is toggled by IntersectionObserver */
+/* ── red atmosphere ─────────────────────────────────────── */
+/* film grain overlay (SVG turbulence) */
+.grain {
+  position: relative;
+}
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.09;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+/* footer blaze: black → red */
+.blaze {
+  background: linear-gradient(180deg, rgb(var(--c-bg)) 0%, #3a0402 22%, #a10a04 55%, #e3160c 85%, #f2231b 100%);
+}
+.red-glow {
+  box-shadow: 0 0 0 1px rgb(var(--c-accent) / 0.6), 0 18px 60px -18px rgb(var(--c-accent) / 0.55);
+}
+
+/* scroll-reveal */
 .reveal {
   opacity: 0;
   transform: translateY(22px);
@@ -134,99 +290,27 @@
   opacity: 1;
   transform: none;
 }
-@media (prefers-reduced-motion: reduce) {
-  .reveal {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-}
-/* slow aurora drift for the landing hero backdrop */
-@keyframes auroraDrift {
-  0%   { transform: translate3d(-4%, -2%, 0) scale(1); }
-  50%  { transform: translate3d(4%, 3%, 0) scale(1.08); }
-  100% { transform: translate3d(-4%, -2%, 0) scale(1); }
-}
-.aurora {
-  animation: auroraDrift 18s ease-in-out infinite;
-}
 
-/* gentle float for the floating hero ticket card */
-@keyframes floaty {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-10px); }
-}
-.float {
-  animation: floaty 6s ease-in-out infinite;
-}
-
-/* animated accent gradient sweep on headline word */
-@keyframes shimmer {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-.grad-accent {
-  background: linear-gradient(100deg, #FF2E2E 0%, #FF6A6A 30%, #A974FF 60%, #FF2E2E 100%);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shimmer 7s linear infinite;
-}
-
-/* content swap pop-in for interactive tabs / selectors */
 @keyframes popIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: none; }
 }
-.pop {
-  animation: popIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .pop { animation: none; }
-}
+.pop { animation: popIn 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
 
-/* ── feature visualisations ───────────────────────────── */
-/* drag a photo into the dropzone (mouse follows), loop */
-@keyframes vizDrag {
-  0%   { transform: translate(96px, -52px) scale(0.9); opacity: 0; }
-  12%  { opacity: 1; }
-  52%  { transform: translate(0, 0) scale(1); opacity: 1; }
-  66%  { transform: translate(0, 0) scale(1); }
-  78%  { opacity: 1; }
-  90%  { opacity: 0; }
-  100% { transform: translate(96px, -52px) scale(0.9); opacity: 0; }
+@keyframes slideInRight {
+  from { transform: translateX(28px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
 }
-.viz-drag { animation: vizDrag 3.8s cubic-bezier(0.6, 0.1, 0.2, 1) infinite; }
-/* landed thumbnail flashes in once the drag completes */
-@keyframes vizLand {
-  0%, 50% { opacity: 0; transform: scale(0.8); }
-  60%     { opacity: 1; transform: scale(1); }
-  86%     { opacity: 1; }
-  92%, 100% { opacity: 0; }
-}
-.viz-land { animation: vizLand 3.8s ease-in-out infinite; }
-/* download / progress bar fill, loop */
-@keyframes vizFill { 0% { width: 0; } 70%, 100% { width: 100%; } }
-.viz-fill { animation: vizFill 2.8s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) {
-  .viz-drag, .viz-land, .viz-fill { animation: none; }
-  .viz-drag { opacity: 1; transform: none; }
-  .viz-fill { width: 100%; }
-}
+.slide-in { animation: slideInRight 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
 
-/* frosted "matte" glass — floating header on scroll (theme-aware) */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn 0.14s ease-out; }
+
+/* frosted header */
 .glass {
   background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aurora,
-  .float,
-  .grad-accent { animation: none; }
-  .grad-accent { color: #FF6A6A; }
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
 }
 
 /* ticket perforation line (dashed, like the logo) */
@@ -234,14 +318,28 @@
   background-image: repeating-linear-gradient(
     to right,
     rgb(var(--c-line2)) 0,
-    rgb(var(--c-line2)) 5px,
-    transparent 5px,
-    transparent 11px
+    rgb(var(--c-line2)) 6px,
+    transparent 6px,
+    transparent 12px
   );
   height: 1px;
 }
+.perforation-v {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgb(var(--c-line2)) 0,
+    rgb(var(--c-line2)) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+  width: 1px;
+}
 
-/* ── Preloader + entrance motion (respects reduced-motion) */
+/* hide scrollbar for horizontal chip rows */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* ── preloader + page motion ───────────────────────────── */
 @keyframes tf-pulse {
   0%, 100% { opacity: 0.55; transform: scale(0.94); }
   50%      { opacity: 1;    transform: scale(1); }
@@ -251,13 +349,110 @@
   100% { transform: translateX(300%); }
 }
 @keyframes tf-in {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateX(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+@keyframes tf-spin { to { transform: rotate(360deg); } }
 .splash-pulse { animation: tf-pulse 1.3s ease-in-out infinite; }
 .splash-sweep { animation: tf-sweep 1.1s ease-in-out infinite; }
-.page-in      { animation: tf-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.page-in      { animation: tf-in 0.16s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.spin-square  { animation: tf-spin 0.9s linear infinite; }
+
+/* ── speed motion (panel) — short, sharp, transform/opacity only ─────── */
+:root { --ease-fast: cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* pressed state: instant scale */
+.press { transition: transform 0.08s var(--ease-fast); }
+.press:active:not(:disabled) { transform: scale(0.98); }
+
+/* staggered card entry (set style="--i: n") */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.card-in { animation: cardIn 0.18s var(--ease-fast) both; animation-delay: calc(min(var(--i, 0), 14) * 20ms); }
+
+/* toast slams in from the bottom */
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.toast-in { animation: toastIn 0.14s var(--ease-fast) both; }
+
+/* right drawer + mobile sheet */
+@keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes drawerOut { from { transform: none; } to { transform: translateX(100%); } }
+.drawer-in  { animation: drawerIn 0.2s var(--ease-fast) both; }
+.drawer-out { animation: drawerOut 0.14s ease-in both; }
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+.scrim-in { animation: scrimIn 0.16s ease-out both; }
+.scrim-out { animation: scrimIn 0.14s ease-in reverse both; }
+
+/* status change: colour wipe across the badge */
+@keyframes wipe {
+  from { transform: scaleX(0); opacity: 0.9; }
+  60%  { transform: scaleX(1); opacity: 0.6; }
+  to   { transform: scaleX(1); opacity: 0; }
+}
+.wipe { position: relative; overflow: hidden; }
+.wipe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--wipe, rgb(var(--c-accent)));
+  transform-origin: left;
+  animation: wipe 0.32s var(--ease-fast) both;
+  pointer-events: none;
+}
+
+/* ticket closed: quick strike + fly towards the tab counter */
+@keyframes flyOut {
+  0%   { opacity: 1; transform: none; }
+  35%  { opacity: 1; transform: translateX(6px); }
+  100% { opacity: 0; transform: translate(40px, -24px) scale(0.9); }
+}
+.fly-out { animation: flyOut 0.26s var(--ease-fast) both; pointer-events: none; }
+.strike { position: relative; }
+.strike::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 2px;
+  background: rgb(var(--c-ok));
+  transform-origin: left;
+  animation: wipe 0.26s var(--ease-fast) both;
+  animation-name: strikeIn;
+}
+@keyframes strikeIn { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* counter bump (+1 tick) */
+@keyframes bump {
+  0% { transform: none; }
+  40% { transform: translateY(-3px) scale(1.25); color: rgb(var(--c-accent)); }
+  100% { transform: none; }
+}
+.bump { display: inline-block; animation: bump 0.32s var(--ease-fast); }
+
+/* chat-like pop from bottom */
+@keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rise-in { animation: riseIn 0.16s var(--ease-fast) both; }
+
+/* skeleton shimmer */
+@keyframes shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.skeleton {
+  background: linear-gradient(90deg, rgb(var(--c-surface2)) 0%, rgb(var(--c-line)) 50%, rgb(var(--c-surface2)) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.1s linear infinite;
+}
+
+/* thin progress bar under the top bar while refreshing silently */
+@keyframes slideBar { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+.busy-bar { animation: slideBar 0.9s linear infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .splash-pulse, .splash-sweep, .page-in { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .pop, .slide-in, .fade-in, .splash-pulse, .splash-sweep, .page-in,
+  .card-in, .toast-in, .drawer-in, .drawer-out, .scrim-in, .scrim-out, .fly-out, .bump, .rise-in, .skeleton, .busy-bar { animation: none !important; }
+  .wipe::after, .strike::before { animation: none; display: none; }
+  .press:active:not(:disabled) { transform: none; }
 }

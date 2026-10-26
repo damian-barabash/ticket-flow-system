@@ -1,9 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
+import { Icon, useEsc } from './ui'
+
+const seen = (key) => {
+  try {
+    return !!localStorage.getItem(key)
+  } catch {
+    return true // storage blocked → never nag
+  }
+}
+
+// first VISIBLE element for a selector (responsive layouts render targets twice)
+function findTarget(sel) {
+  if (!sel) return null
+  const els = Array.from(document.querySelectorAll(sel))
+  return els.find((e) => {
+    const r = e.getBoundingClientRect()
+    return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'
+  })
+}
 
 // Lightweight spotlight tour. Runs once per (storageKey + user).
-// steps: [{ target?: cssSelector, title, text }]  — centered card if no target.
+// steps: [{ target?: cssSelector, title, text }] — centered card if no/hidden target.
+// Callers should memoize `steps`.
 export function Tour({ steps, storageKey, enabled = true }) {
   const { user } = useAuth()
   const { t } = useT()
@@ -14,33 +35,41 @@ export function Tour({ steps, storageKey, enabled = true }) {
   const raf = useRef(0)
 
   useEffect(() => {
-    if (!enabled) return
-    if (localStorage.getItem(key)) return
-    // small delay so target elements are mounted
-    const t = setTimeout(() => setActive(true), 600)
-    return () => clearTimeout(t)
-  }, [key, enabled])
+    if (!enabled || !steps?.length || seen(key)) return
+    const tm = setTimeout(() => setActive(true), 700)
+    return () => clearTimeout(tm)
+  }, [key, enabled, steps?.length])
 
-  const current = steps[step]
+  const current = active ? steps[step] : null
+
+  const finish = useCallback(() => {
+    try {
+      localStorage.setItem(key, '1')
+    } catch {
+      /* ignore */
+    }
+    setActive(false)
+  }, [key])
+  useEsc(finish, active)
 
   useLayoutEffect(() => {
-    if (!active || !current) return
+    if (!current) return
+    let tries = 0
+    let poll = 0
     function measure() {
-      if (!current.target) {
-        setRect(null)
-        return
-      }
-      // Pick the visible match — responsive layouts can render the same
-      // data-tour target twice (e.g. desktop bar vs. mobile burger).
-      const els = document.querySelectorAll(current.target)
-      const el = Array.from(els).find((e) => e.offsetParent !== null) || els[0]
+      const el = findTarget(current.target)
       if (!el) {
+        // target not mounted yet → retry briefly, then fall back to a centered card
+        if (current.target && tries++ < 10) poll = setTimeout(measure, 150)
         setRect(null)
         return
       }
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' })
       const r = el.getBoundingClientRect()
-      setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
+      if (r.top < 70 || r.bottom > window.innerHeight - 20) {
+        el.scrollIntoView({ block: 'center' })
+      }
+      const r2 = el.getBoundingClientRect()
+      setRect({ top: r2.top, left: r2.left, width: r2.width, height: r2.height })
     }
     measure()
     const onMove = () => {
@@ -50,82 +79,66 @@ export function Tour({ steps, storageKey, enabled = true }) {
     window.addEventListener('resize', onMove)
     window.addEventListener('scroll', onMove, true)
     return () => {
+      clearTimeout(poll)
+      cancelAnimationFrame(raf.current)
       window.removeEventListener('resize', onMove)
       window.removeEventListener('scroll', onMove, true)
     }
-  }, [active, current, step])
+  }, [current])
 
-  if (!active || !current) return null
+  if (!current) return null
 
-  function finish() {
-    localStorage.setItem(key, '1')
-    setActive(false)
-  }
-  function next() {
-    if (step >= steps.length - 1) finish()
-    else setStep((s) => s + 1)
-  }
+  const next = () => (step >= steps.length - 1 ? finish() : setStep((s) => s + 1))
+  const pad = 6
+  const hole = rect && { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }
+  const W = Math.min(360, window.innerWidth - 32)
+  const below = hole && hole.top + hole.height + 14 + 200 < window.innerHeight
+  const tipStyle = hole
+    ? {
+        width: W,
+        top: below ? hole.top + hole.height + 14 : Math.max(16, hole.top - 14 - 200),
+        left: Math.min(Math.max(16, hole.left), window.innerWidth - W - 16),
+      }
+    : { width: W, top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }
 
-  const pad = 8
-  const hole = rect && {
-    top: rect.top - pad,
-    left: rect.left - pad,
-    width: rect.width + pad * 2,
-    height: rect.height + pad * 2,
-  }
-
-  // tooltip position: under the target if room, else above; centered if no target
-  const tipTop = hole ? (hole.top > window.innerHeight - 220 ? hole.top - 150 : hole.top + hole.height + 14) : null
-
-  return (
-    <div className="fixed inset-0 z-[80]">
-      {/* dim + spotlight hole */}
+  return createPortal(
+    <div className="fade-in fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={current.title}>
       {hole ? (
         <div
-          className="pointer-events-none absolute rounded-[4px] transition-all duration-300"
-          style={{
-            top: hole.top,
-            left: hole.left,
-            width: hole.width,
-            height: hole.height,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.74)',
-            outline: '1px solid #FF2E2E',
-          }}
+          className="pointer-events-none absolute transition-all duration-200"
+          style={{ ...hole, boxShadow: '0 0 0 9999px rgba(0,0,0,0.78)', outline: '2px solid #F2231B' }}
         />
       ) : (
-        <div className="absolute inset-0 bg-black/74" />
+        <div className="absolute inset-0 bg-black/80" />
       )}
 
-      {/* tooltip card */}
-      <div
-        className="brackets absolute w-[min(340px,calc(100vw-32px))] border border-line bg-surface p-5 shadow-2xl"
-        style={
-          hole
-            ? { top: Math.max(16, tipTop), left: Math.min(Math.max(16, hole.left), window.innerWidth - 356) }
-            : { top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }
-        }
-      >
-        <div className="mb-2 flex items-center justify-between">
-          <span className="label">
-            {t('tour.step', { n: step + 1, total: steps.length })}
-          </span>
-          <button onClick={finish} className="label hover:text-ink">
+      <div className="pop absolute border border-line2 bg-surface p-5" style={tipStyle}>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="label">{t('tour.step', { n: step + 1, total: steps.length })}</span>
+          <button onClick={finish} className="icon-btn-sm" aria-label={t('tour.skip')} title={t('tour.skip')}>
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+        <h3 className="font-display text-[20px] font-bold uppercase leading-tight tracking-tight text-ink">{current.title}</h3>
+        <p className="mt-2 text-[15px] text-muted">{current.text}</p>
+        <div className="mt-5 flex items-center justify-between gap-2">
+          <button onClick={finish} className="text-[13px] font-semibold text-muted hover:text-ink">
             {t('tour.skip')}
           </button>
-        </div>
-        <h3 className="mb-1.5 text-base font-semibold text-ink">{current.title}</h3>
-        <p className="mb-4 text-sm text-faint">{current.text}</p>
-        <div className="flex justify-end gap-2">
-          {step > 0 && (
-            <button onClick={() => setStep((s) => s - 1)} className="btn-ghost">
-              {t('common.back')}
+          <div className="flex gap-2">
+            {step > 0 && (
+              <button onClick={() => setStep((s) => s - 1)} className="btn-ghost btn-sm">
+                <Icon name="arrowLeft" size={15} /> {t('common.back')}
+              </button>
+            )}
+            <button onClick={next} className="btn-accent btn-sm">
+              {step >= steps.length - 1 ? t('tour.done') : t('tour.next')}
+              {step < steps.length - 1 && <Icon name="arrowRight" size={15} />}
             </button>
-          )}
-          <button onClick={next} className="btn-solid">
-            {step >= steps.length - 1 ? t('tour.done') : t('tour.next')}
-          </button>
+          </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

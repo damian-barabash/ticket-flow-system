@@ -50,3 +50,29 @@ export function timeAgo(iso) {
   if (days < 7) return translate(curLang, 'relTime.day', { n: days })
   return formatDate(iso)
 }
+
+// '26 paź' (current year) / '26 paź 2027' — compact due chips on cards.
+export function shortDay(dateStr) {
+  if (!dateStr) return ''
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return String(dateStr)
+  const months = dict(curLang).months
+  return y === new Date().getFullYear() ? `${d} ${months[m - 1]}` : `${d} ${months[m - 1]} ${y}`
+}
+
+// whole days between today (local) and a 'YYYY-MM-DD' date (negative = overdue)
+export function daysUntil(dateStr) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const [y, m, d] = String(dateStr).slice(0, 10).split('-').map(Number)
+  return Math.round((new Date(y, m - 1, d) - today) / 86400000)
+}
+
+// due-date tone: overdue → accent, ≤2 days → warn, later → legend
+export function dueTone(dateStr, closed) {
+  if (!dateStr || closed) return { color: '#8A8A92', days: null }
+  const n = daysUntil(dateStr)
+  if (n < 0) return { color: '#F2231B', days: n, overdue: true }
+  if (n <= 2) return { color: '#F0BE46', days: n }
+  return { color: '#B084FF', days: n }
+}

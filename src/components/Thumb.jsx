@@ -15,6 +15,7 @@ export function Thumb({ att, className = '' }) {
         src={att.signed}
         alt={att.name || ''}
         loading="lazy"
+        decoding="async"
         onError={() => setBroken(true)}
         className={`h-full w-full object-cover ${className}`}
       />
@@ -28,8 +29,8 @@ export function FileFallback({ att }) {
   const { t } = useT()
   return (
     <div className="dotgrid flex h-full w-full flex-col items-center justify-center gap-1 bg-surface2/40 text-center">
-      <span className="font-mono uppercase tracking-label text-[10px] text-muted">{formatLabel(att)}</span>
-      <span className="label-sm text-faint">{t('file.tile')}</span>
+      <span className="num text-[12px] font-medium uppercase text-muted">{formatLabel(att)}</span>
+      <span className="text-[11px] uppercase tracking-[0.06em] text-faint">{t('file.tile')}</span>
     </div>
   )
 }

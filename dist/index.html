@@ -2,17 +2,18 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="./assets/logo-CR7Powd-.png" />
-    <link rel="apple-touch-icon" href="./assets/logo-CR7Powd-.png" />
+    <link rel="icon" type="image/svg+xml" href="./logo.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./favicon-64.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0A0A0B" />
+    <meta name="theme-color" content="#060606" />
 
     <title>Ticket Flow — system zgłoszeń dla klientów i zespołów</title>
     <meta
       name="description"
-      content="Ticket Flow — panel zgłoszeń dla agencji, zespołów i freelancerów. Klient lub współpracownik zakłada zadanie ze zdjęciem, a Ty prowadzisz je od „Nowy” do „Gotowe”. Statusy, wątki, wersje, cele i terminy. RU / PL / EN, od $12/mies."
+      content="Ticket Flow — system zgłoszeń dla agencji, zespołów i freelancerów. Klient zakłada zadanie ze zdjęciem, a Ty prowadzisz je od „Nowy” do „Gotowe”. Statusy, wątki, czat projektu, osoby odpowiedzialne, kalendarz z synchronizacją Google/Apple i push. iOS, Android, macOS, Windows. RU / PL / EN, od $12/mies."
     />
-    <meta name="keywords" content="system zgłoszeń, ticket system, helpdesk, zarządzanie zadaniami, agencja, freelancer, zespół, tickets, task tracker" />
+    <meta name="keywords" content="system zgłoszeń, ticket system, helpdesk, zarządzanie zadaniami, czat projektu, kalendarz zadań, agencja, freelancer, zespół, tickets, task tracker" />
     <meta name="author" content="Ticket Flow" />
     <meta name="robots" content="index, follow" />
     <meta name="google-site-verification" content="A5urJ82GVEMRRibjWsoA56ARpMZJOAXTlaINZt-H1Jw" />
@@ -24,7 +25,7 @@
     <meta property="og:title" content="Ticket Flow — system zgłoszeń dla klientów i zespołów" />
     <meta
       property="og:description"
-      content="Panel zgłoszeń dla agencji, zespołów i freelancerów. Klient lub współpracownik zakłada zadanie ze zdjęciem — Ty prowadzisz je do końca. RU / PL / EN, od $12/mies."
+      content="System zgłoszeń dla agencji, zespołów i freelancerów: zadania ze zdjęciami, czat projektu, kalendarz i powiadomienia push. iOS, Android, macOS, Windows. RU / PL / EN, od $12/mies."
     />
     <meta property="og:url" content="https://ticketflow.pl/" />
     <meta property="og:image" content="https://ticketflow.pl/og-image.png" />
@@ -42,7 +43,7 @@
     <meta name="twitter:title" content="Ticket Flow — system zgłoszeń dla klientów i zespołów" />
     <meta
       name="twitter:description"
-      content="Panel zgłoszeń dla agencji, zespołów i freelancerów. Statusy, wątki, wersje, cele. RU / PL / EN, od $12/mies."
+      content="Zgłoszenia, które nie giną: statusy, wątki, czat projektu, kalendarz i push. RU / PL / EN, od $12/mies."
     />
     <meta name="twitter:image" content="https://ticketflow.pl/og-image.png" />
 
@@ -53,11 +54,13 @@
         "@type": "SoftwareApplication",
         "name": "Ticket Flow",
         "applicationCategory": "BusinessApplication",
-        "operatingSystem": "Web",
+        "operatingSystem": "Web, iOS, Android, macOS, Windows",
         "url": "https://ticketflow.pl/",
         "image": "https://ticketflow.pl/og-image.png",
         "inLanguage": ["pl", "en", "ru"],
-        "description": "Panel zgłoszeń dla agencji, zespołów i freelancerów — do pracy z klientami i do wewnętrznych procesów firmy. Statusy, wątki, wersje projektu, cele i terminy.",
+        "description": "System zgłoszeń dla agencji, zespołów i freelancerów — do pracy z klientami i do wewnętrznych procesów firmy. Statusy, wątki, czat projektu, osoby odpowiedzialne, kalendarz z synchronizacją Google/Apple/Outlook, powiadomienia push, wersje projektu, cele i terminy.",
+        "featureList": ["Zgłoszenia ze zdjęciami", "Statusy i priorytety", "Wątki", "Czat projektu", "Osoby odpowiedzialne", "Kalendarz + Google/Apple/Outlook", "Powiadomienia push", "Wersje i wydania", "Cele i terminy", "RU / PL / EN"],
+        "downloadUrl": "https://apps.apple.com/app/id6791677760",
         "offers": {
           "@type": "Offer",
           "price": "12",
@@ -74,11 +77,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="./assets/index-DNVOIeR1.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-C6jCf_tx.css">
+    <script type="module" crossorigin src="./assets/index-CXtnyJuB.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/react-3a5Lx1dG.js">
+    <link rel="modulepreload" crossorigin href="./assets/supabase-C8W5_S3P.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-CJ0btCJ4.css">
   </head>
   <body>
     <div id="root"></div>

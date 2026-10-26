@@ -5,11 +5,7 @@ import { useT } from '../context/LangContext'
 export function LangSwitch({ className = '' }) {
   const { lang, setLang, languages, t } = useT()
   return (
-    <div
-      className={`flex items-center border border-line ${className}`}
-      role="group"
-      aria-label={t('topbar.lang')}
-    >
+    <div className={`flex h-10 items-stretch border border-line ${className}`} role="group" aria-label={t('topbar.lang')}>
       {languages.map((l) => (
         <button
           key={l.code}
@@ -17,8 +13,8 @@ export function LangSwitch({ className = '' }) {
           onClick={() => setLang(l.code)}
           aria-pressed={lang === l.code}
           title={l.name}
-          className={`px-2 py-1 font-mono uppercase tracking-label text-[10px] transition-colors ${
-            lang === l.code ? 'bg-ink text-bg' : 'text-muted hover:text-ink'
+          className={`press px-2.5 font-mono text-[12px] font-medium uppercase transition-colors ${
+            lang === l.code ? 'bg-ink text-bg' : 'text-muted hover:bg-surface2 hover:text-ink'
           }`}
         >
           {l.label}

@@ -1,8 +1,9 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useT } from '../context/LangContext'
-import { Modal, Spinner } from './ui'
+import { FormError, Icon, Modal, Spinner } from './ui'
+import { errText } from '../lib/errors'
 
 // Create or edit a project (admin only). Handles optional cover upload.
 export function ProjectFormModal({ open, onClose, onSaved, project }) {
@@ -17,10 +18,14 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
   const [error, setError] = useState('')
   const fileRef = useRef(null)
 
+  const blobRef = useRef(null)
+  useEffect(() => () => blobRef.current && URL.revokeObjectURL(blobRef.current), [])
   function pickFile(f) {
     if (!f) return
+    if (blobRef.current) URL.revokeObjectURL(blobRef.current)
+    blobRef.current = URL.createObjectURL(f)
     setFile(f)
-    setCoverPreview(URL.createObjectURL(f))
+    setCoverPreview(blobRef.current)
   }
 
   async function uploadCover(projectId) {
@@ -37,6 +42,7 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
 
   async function onSubmit(e) {
     e.preventDefault()
+    if (busy) return
     setError('')
     setBusy(true)
     try {
@@ -75,7 +81,7 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
       onSaved?.(row)
       onClose()
     } catch (err) {
-      setError(err.message || t('projectForm.error'))
+      setError(errText(t, err, 'projectForm.error'))
     } finally {
       setBusy(false)
     }
@@ -88,12 +94,20 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="brackets relative mb-6 flex aspect-[16/7] w-full items-center justify-center overflow-hidden border border-line bg-surface2 hover:border-line2 transition-colors"
+          className="group relative mb-6 flex aspect-[16/7] w-full items-center justify-center overflow-hidden border border-dashed border-line2 bg-surface2 transition-colors hover:border-ink"
         >
           {coverPreview ? (
-            <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+            <>
+              <img src={coverPreview} alt="" className="h-full w-full object-cover" />
+              <span className="absolute bottom-2 right-2 flex items-center gap-1.5 bg-bg/85 px-2.5 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-ink">
+                <Icon name="image" size={14} /> {t('panel.changeCover')}
+              </span>
+            </>
           ) : (
-            <span className="label">{t('projectForm.uploadCover')}</span>
+            <span className="flex flex-col items-center gap-2 text-[14px] text-muted group-hover:text-ink">
+              <Icon name="image" size={26} />
+              {t('projectForm.uploadCover')}
+            </span>
           )}
         </button>
         <input
@@ -104,16 +118,17 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
           onChange={(e) => pickFile(e.target.files?.[0])}
         />
 
-        <label className="label mb-2 block">{t('projectForm.name')}</label>
+        <label className="field-label">{t('projectForm.name')}</label>
         <input
           required
+          autoFocus
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t('projectForm.namePlaceholder')}
           className="field mb-6"
         />
 
-        <label className="label mb-2 block">{t('projectForm.description')}</label>
+        <label className="field-label">{t('projectForm.description')}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -122,16 +137,15 @@ export function ProjectFormModal({ open, onClose, onSaved, project }) {
           className="field resize-none mb-6"
         />
 
-        {error && (
-          <div className="mb-5 border border-accent/40 bg-accentSoft px-3 py-2 text-xs text-accent">{error}</div>
-        )}
+        <FormError>{error}</FormError>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" onClick={onClose} className="btn-ghost">
             {t('common.cancel')}
           </button>
-          <button type="submit" disabled={busy || !name.trim()} className="btn-solid">
-            {busy ? <Spinner className="border-bg/40 border-t-bg" /> : editing ? t('common.save') : t('common.create')}
+          <button type="submit" disabled={busy || !name.trim()} className="btn-accent">
+            {busy ? <Spinner className="border-white/40 border-t-white" /> : <Icon name={editing ? 'check' : 'plus'} size={16} />}
+            {editing ? t('common.save') : t('common.create')}
           </button>
         </div>
       </form>

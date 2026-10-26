@@ -1,80 +1,116 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useT } from '../context/LangContext'
-import { Modal, Spinner, Avatar } from './ui'
+import { Avatar, EmptyState, ErrorState, Icon, Modal, Skeleton, Spinner, useToast } from './ui'
+import { errText } from '../lib/errors'
 
-// Admin: link/unlink client users to a project.
+// Staff: link/unlink client users to a project (optimistic, rolls back on error).
 export function ManageMembersModal({ open, onClose, projectId }) {
   const { t } = useT()
-  const [users, setUsers] = useState([])
+  const toast = useToast()
+  const navigate = useNavigate()
+  const [users, setUsers] = useState(null)
   const [memberIds, setMemberIds] = useState(new Set())
-  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [busyId, setBusyId] = useState(null)
 
-  async function load() {
-    setLoading(true)
-    const [{ data: profs }, { data: mem }] = await Promise.all([
-      supabase.from('profiles').select('id, full_name, email, role').order('created_at'),
+  const load = useCallback(async () => {
+    setError(false)
+    const [{ data: profs, error: e1 }, { data: mem, error: e2 }] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, email, role').eq('role', 'user').order('created_at'),
       supabase.from('project_members').select('user_id').eq('project_id', projectId),
     ])
-    setUsers((profs ?? []).filter((p) => p.role === 'user'))
+    if (e1 || e2) {
+      setError(true)
+      return
+    }
+    setUsers(profs ?? [])
     setMemberIds(new Set((mem ?? []).map((m) => m.user_id)))
-    setLoading(false)
-  }
+  }, [projectId])
 
   useEffect(() => {
     if (open) load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, projectId])
+  }, [open, load])
 
   async function toggle(userId) {
+    if (busyId) return
+    const isMember = memberIds.has(userId)
     setBusyId(userId)
-    if (memberIds.has(userId)) {
-      await supabase.from('project_members').delete().eq('project_id', projectId).eq('user_id', userId)
+    const flip = (on) =>
       setMemberIds((s) => {
         const n = new Set(s)
-        n.delete(userId)
+        on ? n.add(userId) : n.delete(userId)
         return n
       })
-    } else {
-      await supabase.from('project_members').insert({ project_id: projectId, user_id: userId })
-      setMemberIds((s) => new Set(s).add(userId))
+    flip(!isMember)
+    const { error: e } = isMember
+      ? await supabase.from('project_members').delete().eq('project_id', projectId).eq('user_id', userId)
+      : await supabase.from('project_members').insert({ project_id: projectId, user_id: userId })
+    if (e) {
+      flip(isMember)
+      toast.show(errText(t, e), { tone: 'error' })
     }
     setBusyId(null)
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={t('members.title')}>
-      {loading ? (
-        <div className="flex justify-center py-10">
-          <Spinner className="h-5 w-5" />
+    <Modal open={open} onClose={onClose} title={t('members.title')} width="max-w-lg">
+      {error ? (
+        <ErrorState onRetry={load} onClose={onClose} />
+      ) : !users ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
         </div>
       ) : users.length === 0 ? (
-        <p className="py-6 text-center text-sm text-faint">
-          {t('members.empty')}
-        </p>
+        <EmptyState icon="users" title={t('panel.noClients')} hint={t('members.empty')}>
+          <button
+            onClick={() => {
+              onClose()
+              navigate('/admin/users')
+            }}
+            className="btn-accent"
+          >
+            <Icon name="userPlus" size={16} /> {t('topbar.users')}
+          </button>
+        </EmptyState>
       ) : (
-        <ul className="divide-y divide-line">
-          {users.map((u) => {
-            const isMember = memberIds.has(u.id)
-            return (
-              <li key={u.id} className="flex items-center gap-3 py-3">
-                <Avatar name={u.full_name} email={u.email} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm text-ink">{u.full_name || u.email}</div>
-                  {u.full_name && <div className="truncate text-xs text-faint">{u.email}</div>}
-                </div>
-                <button
-                  onClick={() => toggle(u.id)}
-                  disabled={busyId === u.id}
-                  className={isMember ? 'btn-ghost' : 'btn-solid'}
-                >
-                  {busyId === u.id ? '…' : isMember ? t('members.remove') : t('members.add')}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+        <>
+          <p className="mb-3 text-[14px] text-muted">{t('panel.membersHint', { n: memberIds.size })}</p>
+          <ul className="divide-y divide-line border-y border-line">
+            {users.map((u) => {
+              const isMember = memberIds.has(u.id)
+              return (
+                <li key={u.id} className="flex items-center gap-3 py-3">
+                  <Avatar name={u.full_name} email={u.email} size={36} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-[15px] font-medium text-ink">{u.full_name || u.email}</div>
+                    {u.full_name && <div className="truncate text-[13px] text-muted">{u.email}</div>}
+                  </div>
+                  <button
+                    onClick={() => toggle(u.id)}
+                    disabled={!!busyId}
+                    className={`btn-sm min-w-[112px] ${isMember ? 'btn-ghost' : 'btn-accent'}`}
+                  >
+                    {busyId === u.id ? (
+                      <Spinner size={13} />
+                    ) : isMember ? (
+                      <>
+                        <Icon name="check" size={15} /> {t('panel.member')}
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="plus" size={15} /> {t('members.add')}
+                      </>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </>
       )}
     </Modal>
   )
