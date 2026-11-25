@@ -182,11 +182,19 @@ export function Footer({ go }) {
             </span>
             {t('landing.footer.copy')}
           </span>
-          <span>{t('landing.footer.designed')}</span>
+          <span>
+            {t('landing.footer.designed')}{' '}
+            <a href="https://dbdcstudio.pl/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-4 hover:no-underline">
+              DBDC Studio
+            </a>
+          </span>
           <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-left uppercase hover:underline sm:text-right">
             {t('landing.footer.top')} ↑
           </button>
         </div>
+        <p className="border-t border-white/40 py-4 text-[12px] leading-relaxed text-white">
+          {t('landing.footer.operator')}: Maksym Yehorov Maksikon · ul. Zamiany 18 lok. 46, 02-786 Warszawa · NIP: 9512594289 · REGON: 528375783
+        </p>
       </div>
     </footer>
   )
